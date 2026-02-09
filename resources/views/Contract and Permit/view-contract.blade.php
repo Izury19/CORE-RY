@@ -12,7 +12,7 @@
         </a>
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Contract Details</h1>
-            <p class="text-gray-600 mt-1">View contract information and status</p>
+            <p class="text-gray-600 mt-1">View contract information and statusss</p>
         </div>
     </div>
 
