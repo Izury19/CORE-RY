@@ -12,7 +12,7 @@
         </a>
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Edit Contract</h1>
-            <p class="text-gray-600 mt-1">Update contract details before legal review</p>
+            <p class="text-gray-600 mt-1">Update contract details before legal revieww</p>
         </div>
     </div>
 
