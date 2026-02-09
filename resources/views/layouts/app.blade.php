@@ -201,7 +201,7 @@
 
 <script>
     let inactivityTimer;
-    const INACTIVITY_LIMIT = 7200000; // 5 seconds
+    const INACTIVITY_LIMIT = 180000; // 5 seconds
 
     function startInactivityTimer() {
         inactivityTimer = setTimeout(() => {

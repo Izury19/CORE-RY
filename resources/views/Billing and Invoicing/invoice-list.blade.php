@@ -569,7 +569,7 @@ function downloadProtectedPdf(invoiceId) {
 <!-- 3-MINUTE AUTO-LOCK -->
 <script>
     let inactivityTimer;
-    const INACTIVITY_LIMIT = 7200000; // 3 minutes
+    const INACTIVITY_LIMIT = 180000; // 3 minutes
 
     function startInactivityTimer() {
         inactivityTimer = setTimeout(() => {
