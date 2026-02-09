@@ -1,0 +1,16 @@
+# Laravel
+.env
+/vendor/
+/storage/framework/cache/data/
+/storage/framework/sessions/
+/storage/framework/views/
+/public/storage/
+/public/hot/
+/public/mix-manifest.json
+/node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnpm-debug.log
+.DS_Store
+Thumbs.db
