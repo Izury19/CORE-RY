@@ -166,7 +166,7 @@ class BillingInvoiceController extends Controller
     
     $equipmentId = strtoupper(substr($request->equipment_type, 0, 3)) . '-' . rand(1000, 9999);
 
-    // Create invoice
+    // Create invoice WITHOUT creating record
     $invoice = BillingInvoice::create([
         'invoice_uid' => 'INV-' . now()->format('ymd') . '-' . rand(1000, 9999),
         'client_name' => $request->client_name,
@@ -181,28 +181,12 @@ class BillingInvoiceController extends Controller
         'sent_to_record_payment' => true
     ]);
 
-   // 🔥 FORCE INSERT — bypass foreign key issue
-\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+    // ✅ NO MORE FORCE INSERT TO RECORDS TABLE!
+    // Records will be created ONLY when payment is recorded
 
-\DB::table('records')->insert([
-    'invoice_id' => $invoice->id,
-    'payment_uid' => 'PAY-' . now()->format('Y') . '-' . str_pad($invoice->id, 4, '0', STR_PAD_LEFT),
-    'payment_method' => 'pending',
-    'reference_number' => $invoice->invoice_uid,
-    'status' => 'pending',
-    'total' => 0,
-    'client_name' => $request->client_name, // ✅ MUST BE PRESENT
-    'created_at' => now(),
-    'updated_at' => now()
-]);
-
-\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-    // ✅ REDIRECT (not JSON) for simple form submission
     return redirect()->route('billing.invoices.index')
-        ->with('success', '✅ Demo invoice generated and synced to Record & Payment!');
+        ->with('success', '✅ Invoice generated successfully!');
 }
-    
    // Add this method at the bottom of your BillingInvoiceController class
 public function forwardIssuedBill(Request $request, $invoiceId)
 {

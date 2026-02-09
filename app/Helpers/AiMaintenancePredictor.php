@@ -27,7 +27,7 @@ class AiMaintenancePredictor
         // Simple formula: (critical * 0.4) + (overdue * 0.3)
         $riskScore = min(($criticalCount * 0.4) + ($overdueCount * 0.3), 1.0);
         
-        return round($riskScore, 2);
+        return round($riskScore, 2); // ✅ Always returns clean decimal like 0.85
     }
 
     /**
@@ -43,8 +43,8 @@ class AiMaintenancePredictor
             ->get();
 
         if ($lastMaintenances->count() < 2) {
-            // Not enough data, default to 3 months
-            return now()->addMonths(3);
+            // Not enough data, default to 3 months (whole days only)
+            return now()->addDays(90); // ✅ 90 days instead of 3 months
         }
 
         // Calculate average interval between maintenances
@@ -60,9 +60,10 @@ class AiMaintenancePredictor
 
         $averageInterval = $totalDays / count($intervals);
         
-        // Predict next date (add buffer for safety)
+        // Predict next date (add buffer for safety) → ROUND TO WHOLE DAYS
         $lastCompleted = Carbon::parse($lastMaintenances->first()->completed_at);
-        return $lastCompleted->addDays($averageInterval * 1.2); // 20% buffer
+        $predictedDays = round($averageInterval * 1.2); // ✅ Round to whole number
+        return $lastCompleted->addDays($predictedDays);
     }
 
     /**

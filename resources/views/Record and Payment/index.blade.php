@@ -104,22 +104,6 @@
                 <input type="date" name="end_date" value="{{ request('end_date') }}" 
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="applyFilters()">
             </div>
-            
-            <!-- Export Buttons -->
-            <div class="flex gap-2">
-                <button type="button" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm flex items-center">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Excel
-                </button>
-                <button type="button" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    PDF
-                </button>
-            </div>
         </form>
     </div>
 
@@ -181,7 +165,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             @if($payment->payment_status === null)
-                                <span class="text-gray-500">₱{{ number_format($payment->total_amount, 2) }} (Pending)</span>
+                                <span class="text-gray-500">₱{{ number_format($payment->total_amount, 2) }} </span>
                             @else
                                 <span class="text-green-600">₱{{ number_format($payment->amount_paid, 2) }}</span>
                             @endif

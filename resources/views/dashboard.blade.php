@@ -118,15 +118,9 @@
             margin-bottom: 12px;
         }
         
-        .chart-placeholder {
+        .chart-container {
             flex: 1;
-            background: #ecf0f1;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6b7280;
-            font-size: 0.875rem;
+            position: relative;
         }
         
         /* Project Status Card */
@@ -145,15 +139,44 @@
             margin-bottom: 12px;
         }
         
-        .project-placeholder {
+        .project-content {
             height: 280px;
-            background: #ecf0f1;
-            border-radius: 6px;
             display: flex;
+            flex-direction: column;
+        }
+        
+        .project-item {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            color: #6b7280;
-            font-size: 0.875rem;
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .project-item:last-child {
+            border-bottom: none;
+        }
+        
+        .project-status {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-completed {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-in-progress {
+            background-color: #ffedd5;
+            color: #ea580c;
+        }
+        
+        .status-pending {
+            background-color: #dbeafe;
+            color: #1d4ed8;
         }
     </style>
 </head>
@@ -472,22 +495,22 @@
             <div class="charts-grid">
                 <div class="chart-card">
                     <div class="chart-title">Revenue Trend (Financial Intelligence)</div>
-                    <div class="chart-placeholder">
-                        Data from Financial Intelligence module
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card">
                     <div class="chart-title">Payment Methods Distribution</div>
-                    <div class="chart-placeholder">
-                        Shows payment method breakdown
+                    <div class="chart-container">
+                        <canvas id="paymentChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card">
                     <div class="chart-title">Equipment Availability Rate (Maintenance Scheduling)</div>
-                    <div class="chart-placeholder">
-                        Real-time maintenance status from Schedule Preventive Maintenance
+                    <div class="chart-container">
+                        <canvas id="maintenanceChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -495,8 +518,27 @@
             <!-- Project Status Updates -->
             <div class="project-card">
                 <div class="project-title">Project Status Updates (CORE 4)</div>
-                <div class="project-placeholder">
-                    Project progress data from Project Management system
+                <div class="project-content">
+                    <div class="project-item">
+                        <span>Crane Installation - Manila</span>
+                        <span class="project-status status-completed">Completed</span>
+                    </div>
+                    <div class="project-item">
+                        <span>Truck Fleet Upgrade</span>
+                        <span class="project-status status-in-progress">In Progress</span>
+                    </div>
+                    <div class="project-item">
+                        <span>Equipment Certification</span>
+                        <span class="project-status status-pending">Pending Review</span>
+                    </div>
+                    <div class="project-item">
+                        <span>Permit Renewal - Q1 2026</span>
+                        <span class="project-status status-in-progress">In Progress</span>
+                    </div>
+                    <div class="project-item">
+                        <span>AI System Integration</span>
+                        <span class="project-status status-completed">Completed</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -513,5 +555,132 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+
+<script>
+// Revenue Trend Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'Revenue (₱)',
+            data: [120000, 190000, 150000, 220000, 180000, 250000],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 3,
+            pointBackgroundColor: '#10b981',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    callback: function(value) {
+                        return '₱' + (value/1000).toFixed(0) + 'K';
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Payment Methods Chart
+const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+const paymentChart = new Chart(paymentCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Bank Transfer', 'Cash', 'GCash', 'Check'],
+        datasets: [{
+            data: [45, 25, 20, 10],
+            backgroundColor: [
+                '#3b82f6',
+                '#10b981', 
+                '#f59e0b',
+                '#ef4444'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            }
+        },
+        cutout: '65%'
+    }
+});
+
+// Maintenance Chart
+const maintenanceCtx = document.getElementById('maintenanceChart').getContext('2d');
+const maintenanceChart = new Chart(maintenanceCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [{
+            label: 'Available Equipment',
+            data: [85, 92, 78, 88],
+            backgroundColor: '#8b5cf6',
+            borderRadius: 4,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
 </body>
 </html>

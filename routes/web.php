@@ -240,3 +240,5 @@ Route::get('/test-invoice-record', function () {
 
     return "✅ Invoice ID: {$invoice->id} | Record created!";
 });
+
+Route::post('/forward-document', [ReportingController::class, 'forwardDocument'])->name('forward.document');

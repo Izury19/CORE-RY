@@ -9,86 +9,97 @@ use Illuminate\Support\Facades\Http;
 
 class RecordController extends Controller
 {
-    public function index(Request $request)
-    {
-        $page = $request->get('page', 1);
-        $perPage = 10;
-        $offset = ($page - 1) * $perPage;
+   public function index(Request $request)
+{
+    $page = $request->get('page', 1);
+    $perPage = 10;
+    $offset = ($page - 1) * $perPage;
 
-        $query = DB::table('billing_invoices')
-            ->leftJoin('records', 'billing_invoices.id', '=', 'records.invoice_id')
-            ->select(
-                'billing_invoices.id as invoice_id',
-                'billing_invoices.client_name',
-                'billing_invoices.equipment_type',
-                'billing_invoices.total_amount',
-                'billing_invoices.status as invoice_status',
-                'records.payment_uid',
-                'records.payment_method',
-                'records.reference_number',
-                'records.status as payment_status',
-                'records.total as amount_paid',
-                'records.created_at as payment_date'
-            );
+    // ✅ FIXED QUERY: Properly join and select payment status
+    $query = DB::table('billing_invoices')
+        ->leftJoin('records', 'billing_invoices.id', '=', 'records.invoice_id')
+        ->select(
+            'billing_invoices.id as invoice_id',
+            'billing_invoices.client_name',
+            'billing_invoices.equipment_type',
+            'billing_invoices.total_amount',
+            'billing_invoices.status as invoice_status',
+            'records.payment_uid',
+            'records.payment_method',
+            'records.reference_number',
+            // ✅ CRITICAL FIX: Use records.status ONLY if record exists
+            DB::raw('CASE 
+                WHEN records.invoice_id IS NULL THEN NULL 
+                ELSE records.status 
+            END as payment_status'),
+            'records.total as amount_paid',
+            'records.created_at as payment_date'
+        );
 
-        // Filter by status
-        if ($request->filled('status')) {
-            if ($request->status === 'pending') {
-                $query->whereNull('records.status');
-            } elseif ($request->status === 'completed') {
-                $query->whereNotNull('records.status');
-            }
-        }
-
-        // Search functionality
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('billing_invoices.client_name', 'like', "%{$search}%")
-                  ->orWhere('billing_invoices.id', 'like', "%{$search}%")
-                  ->orWhere('records.reference_number', 'like', "%{$search}%");
+    // ✅ FIXED FILTER LOGIC
+    if ($request->filled('status')) {
+        if ($request->status === 'pending') {
+            // Show invoices with NO record OR record with NULL/empty status
+            $query->where(function($q) {
+                $q->whereNull('records.invoice_id')
+                  ->orWhereNull('records.status')
+                  ->orWhere('records.status', '');
             });
+        } elseif ($request->status === 'completed') {
+            // Only show records with status = 'completed'
+            $query->where('records.status', 'completed');
         }
-
-        // Date range filter
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('records.created_at', [$request->start_date, $request->end_date]);
-        }
-
-        // Sort by invoice_id DESC (highest first)
-        $query->orderBy('billing_invoices.id', 'desc');
-
-        // Get total count and current page data
-        $total = $query->count();
-        $payments = $query->offset($offset)->limit($perPage)->get();
-
-        // Rest of your metrics code...
-        $totalReceived = DB::table('records')->where('status', 'completed')->sum('total');
-        $totalInvoices = DB::table('billing_invoices')->count();
-        $paidInvoices = DB::table('billing_invoices')->where('status', 'paid')->count();
-        $collectionRate = $totalInvoices > 0 ? round(($paidInvoices / $totalInvoices) * 100, 1) : 0;
-
-  $unpaidInvoices = DB::table('billing_invoices')
-    ->whereIn('billing_invoices.status', ['issued', 'billed'])
-    ->leftJoin('records', 'billing_invoices.id', '=', 'records.invoice_id')
-    ->where(function($q) {
-        // Include invoices with NO record OR record with status = 'pending'
-        $q->whereNull('records.invoice_id')
-          ->orWhere('records.status', 'pending');
-    })
-    ->select('billing_invoices.*')
-    ->get();
-
-        return view('Record and Payment.index', compact(
-            'payments',
-            'total',
-            'page',
-            'perPage',
-            'totalReceived',
-            'collectionRate',
-            'unpaidInvoices'
-        ));
     }
+
+    // Search functionality
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('billing_invoices.client_name', 'like', "%{$search}%")
+              ->orWhere('billing_invoices.id', 'like', "%{$search}%")
+              ->orWhere('records.reference_number', 'like', "%{$search}%");
+        });
+    }
+
+    // Date range filter
+    if ($request->filled('start_date') && $request->filled('end_date')) {
+        $query->whereBetween('records.created_at', [$request->start_date, $request->end_date]);
+    }
+
+    // Sort by invoice_id DESC (highest first)
+    $query->orderBy('billing_invoices.id', 'desc');
+
+    // Get total count and current page data
+    $total = $query->count();
+    $payments = $query->offset($offset)->limit($perPage)->get();
+
+    // Rest of your metrics code...
+    $totalReceived = DB::table('records')->where('status', 'completed')->sum('total');
+    $totalInvoices = DB::table('billing_invoices')->count();
+    $paidInvoices = DB::table('billing_invoices')->where('status', 'paid')->count();
+    $collectionRate = $totalInvoices > 0 ? round(($paidInvoices / $totalInvoices) * 100, 1) : 0;
+
+    $unpaidInvoices = DB::table('billing_invoices')
+        ->whereIn('billing_invoices.status', ['issued', 'billed'])
+        ->leftJoin('records', 'billing_invoices.id', '=', 'records.invoice_id')
+        ->where(function($q) {
+            $q->whereNull('records.invoice_id')
+              ->orWhereNull('records.status')
+              ->orWhere('records.status', '');
+        })
+        ->select('billing_invoices.*')
+        ->get();
+
+    return view('Record and Payment.index', compact(
+        'payments',
+        'total',
+        'page',
+        'perPage',
+        'totalReceived',
+        'collectionRate',
+        'unpaidInvoices'
+    ));
+}
 
     public function store(Request $request)
     {
@@ -107,6 +118,9 @@ class RecordController extends Controller
             return back()->withErrors(['amount_paid' => 'Payment amount must match invoice total: ₱' . number_format($invoice->total_amount, 2)]);
         }
 
+        // ✅ FIXED: Set status to 'completed' ONLY when full amount is paid
+        $paymentStatus = 'completed'; // Since we validate exact amount match
+
         // Update existing record or create new
         $record = \App\Models\Record::where('invoice_id', $invoice->id)->first();
         
@@ -119,7 +133,7 @@ class RecordController extends Controller
                 'total' => $request->amount_paid,
                 'payment_method' => $request->payment_mode,
                 'reference_number' => $request->reference_number,
-                'status' => 'completed'
+                'status' => $paymentStatus
             ]);
         } else {
             // Create new record
@@ -131,7 +145,7 @@ class RecordController extends Controller
                 'total' => $request->amount_paid,
                 'payment_method' => $request->payment_mode,
                 'reference_number' => $request->reference_number,
-                'status' => 'completed'
+                'status' => $paymentStatus
             ]);
         }
 
@@ -149,6 +163,7 @@ class RecordController extends Controller
                 'reference_number' => $request->reference_number
             ];
             
+            // ✅ FIXED: Remove extra spaces in URL
             $response = Http::withOptions(['verify' => false, 'timeout' => 30])
                 ->post('https://financials.cranecali-ms.com/collections_api.php', $data);
                 

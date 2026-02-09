@@ -425,7 +425,7 @@ class ReportingController extends Controller
                 'timeout' => 30
             ])
             ->attach('file', $pdfContent, $filename)
-            ->post('https://admin.cranecali-ms.com/api/documents/store    ', [
+            ->post('https://admin.cranecali-ms.com/api/documents/store', [
                 'title' => $title,
                 'description' => $description,
                 'file' => $pdfContent

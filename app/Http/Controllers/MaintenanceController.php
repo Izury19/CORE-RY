@@ -260,15 +260,18 @@ class MaintenanceController extends Controller
         
         switch($type) {
             case 'upcoming':
-                $daysLeft = now()->diffInDays($schedule->scheduled_date);
-                $message = "Maintenance scheduled for {$schedule->equipment_name} in {$daysLeft} days";
-                break;
-            case 'overdue':
-                $message = "Maintenance for {$schedule->equipment_name} is OVERDUE!";
-                break;
-            case 'completed':
-                $message = "Maintenance for {$schedule->equipment_name} has been completed";
-                break;
+    $scheduledDate = Carbon::parse($schedule->scheduled_date);
+    $today = now();
+    
+    if ($scheduledDate->isFuture()) {
+        $daysLeft = $today->diffInDays($scheduledDate);
+        $daysLeft = max(1, round($daysLeft)); // Ensure minimum 1 day
+        $message = "Maintenance scheduled for {$schedule->equipment_name} in {$daysLeft} day" . ($daysLeft != 1 ? 's' : '');
+    } else {
+        // If scheduled date is in the past, it's overdue (but type is 'upcoming' — should not happen)
+        $message = "Maintenance for {$schedule->equipment_name} is overdue";
+    }
+    break;
         }
         
         // ✅ Ensure equipment_id is not null
@@ -308,6 +311,11 @@ class MaintenanceController extends Controller
 
     public function dashboard()
     {
+        // Auto-create sample data if no schedules exist (for demo only)
+        if (app()->environment('local') && MaintenanceSchedule::count() == 0) {
+            $this->createSampleData();
+        }
+
         // AI Risk Distribution
         $highRiskCount = MaintenanceSchedule::where('ai_risk_score', '>=', 0.8)
             ->where('status', 'pending')
@@ -354,5 +362,86 @@ class MaintenanceController extends Controller
             'upcomingMaintenance',
             'recentNotifications'
         ));
+    }
+
+    // Helper method to create sample data
+    private function createSampleData()
+    {
+        // Create sample maintenance types if none exist
+        $types = [
+            ['name' => 'Preventive Maintenance', 'description' => 'Regular scheduled maintenance'],
+            ['name' => 'Corrective Maintenance', 'description' => 'Repair after failure'],
+            ['name' => 'Predictive Maintenance', 'description' => 'AI-based maintenance scheduling']
+        ];
+        
+        foreach ($types as $typeData) {
+            MaintenanceType::firstOrCreate(
+                ['name' => $typeData['name']],
+                $typeData
+            );
+        }
+        
+        $maintenanceTypes = MaintenanceType::all();
+        
+        // Create sample schedules
+        $schedules = [
+            [
+                'equipment_name' => 'Liebherr LTM 11200 Crane',
+                'equipment_id' => 'LIEBHERR-LTM-11200',
+                'maintenance_type_id' => $maintenanceTypes[0]->maintenance_types_id,
+                'scheduled_date' => now()->addDays(2),
+                'priority' => 'high',
+                'status' => 'pending',
+                'ai_risk_score' => 0.85,
+                'ai_predicted_failure_date' => now()->addDays(5),
+            ],
+            [
+                'equipment_name' => 'Tadano TG-500E Mobile Crane',
+                'equipment_id' => 'TADANO-TG500E',
+                'maintenance_type_id' => $maintenanceTypes[1]->maintenance_types_id,
+                'scheduled_date' => now()->addDays(5),
+                'priority' => 'medium',
+                'status' => 'pending',
+                'ai_risk_score' => 0.65,
+                'ai_predicted_failure_date' => now()->addDays(10),
+            ],
+            [
+                'equipment_name' => 'Kobelco CK-500G Tower Crane',
+                'equipment_id' => 'KOBECKO-CK500G',
+                'maintenance_type_id' => $maintenanceTypes[2]->maintenance_types_id,
+                'scheduled_date' => now()->subDays(1),
+                'priority' => 'critical',
+                'status' => 'completed',
+                'completed_at' => now()->subDays(1),
+                'ai_risk_score' => 0.92,
+                'ai_predicted_failure_date' => now(),
+            ]
+        ];
+        
+        foreach ($schedules as $scheduleData) {
+            MaintenanceSchedule::create($scheduleData);
+        }
+        
+        // Create sample notifications
+        $notifications = [
+            [
+                'equipment_name' => 'Liebherr LTM 11200 Crane',
+                'equipment_id' => 'LIEBHERR-LTM-11200',
+                'scheduled_date' => now()->addDays(2),
+                'notification_type' => 'upcoming',
+                'message' => 'Maintenance scheduled for Liebherr LTM 11200 Crane in 2 days'
+            ],
+            [
+                'equipment_name' => 'Kobelco CK-500G Tower Crane',
+                'equipment_id' => 'KOBECKO-CK500G',
+                'scheduled_date' => now()->subDays(1),
+                'notification_type' => 'completed',
+                'message' => 'Maintenance for Kobelco CK-500G Tower Crane has been completed'
+            ]
+        ];
+        
+        foreach ($notifications as $notifData) {
+            MaintenanceNotification::create($notifData);
+        }
     }
 }
