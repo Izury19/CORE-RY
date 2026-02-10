@@ -241,4 +241,8 @@ Route::get('/test-invoice-record', function () {
     return "✅ Invoice ID: {$invoice->id} | Record created!";
 });
 
+
 Route::post('/forward-document', [ReportingController::class, 'forwardDocument'])->name('forward.document');
+Route::get('/forward-files', function () {
+    return view('forward-form');
+})->name('forward.files');

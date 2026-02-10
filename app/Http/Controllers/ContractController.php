@@ -59,7 +59,7 @@ class ContractController extends Controller
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post('https://admin.cranecali-ms.com/contracts', [
+            ])->post('https://admin.cranecali-ms.com/api/contracts', [
                 'title' => $validated['contract_type'] . ' Agreement with ' . $validated['counterparty'],
                 'description' => $validated['contract_details'],
                 'party_a' => 'Cranecali MS Inc.',

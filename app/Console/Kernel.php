@@ -19,4 +19,9 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    protected $routeMiddleware = [
+    // ... existing middleware
+    'staff.only' => \App\Http\Middleware\StaffOnly::class, // ← ADD THIS LINE
+];
 }

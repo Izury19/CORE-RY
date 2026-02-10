@@ -407,61 +407,62 @@ class ReportingController extends Controller
     }
 
     public function forwardDocument(Request $request)
-    {
-        $request->validate([
-            'document_type' => 'required|string',
-            'category' => 'required|string'
+{
+    $request->validate([
+        'document_type' => 'required|string',
+        'category' => 'required|string'
+    ]);
+
+    try {
+        $pdfContent = $this->generateReportPdf($request->document_type);
+        $filename = str_replace(' ', '_', $request->document_type) . '_' . now()->format('Ymd_His') . '.pdf';
+
+        $title = $request->document_type;
+        $description = "Automatically generated " . strtolower($request->document_type) . " from Reporting & Analytics System";
+        
+        // ✅ FIX: Remove extra spaces in URL
+        $response = Http::withOptions([
+            'verify' => false,
+            'timeout' => 30
+        ])
+        ->attach('file', $pdfContent, $filename)
+        ->post('https://admin.cranecali-ms.com/api/documents/store', [ // ✅ NO EXTRA SPACES
+            'title' => $title,
+            'description' => $description,
+            'file' => $pdfContent
         ]);
 
-        try {
-            $pdfContent = $this->generateReportPdf($request->document_type);
-            $filename = str_replace(' ', '_', $request->document_type) . '_' . now()->format('Ymd_His') . '.pdf';
-
-            $title = $request->document_type;
-            $description = "Automatically generated " . strtolower($request->document_type) . " from Reporting & Analytics System";
-            
-            $response = Http::withOptions([
-                'verify' => false,
-                'timeout' => 30
-            ])
-            ->attach('file', $pdfContent, $filename)
-            ->post('https://admin.cranecali-ms.com/api/documents/store', [
-                'title' => $title,
-                'description' => $description,
-                'file' => $pdfContent
+        if ($response->successful()) {
+            return response()->json([
+                'success' => true,
+                'message' => '✅ File successfully sent to Document Manager!',
+                'filename' => $filename
             ]);
-
-            if ($response->successful()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => '✅ File successfully sent to Document Manager!',
-                    'filename' => $filename
-                ]);
-            } else {
-                Log::error('Admin API Error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'title' => $title
-                ]);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => '❌ Failed to send file. Status: ' . $response->status()
-                ], 500);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Forward Document Exception', [
-                'error' => $e->getMessage(),
-                'document_type' => $request->document_type
+        } else {
+            Log::error('Admin API Error', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'title' => $title
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => '❌ Server error: ' . $e->getMessage()
+                'message' => '❌ Failed to send file. Status: ' . $response->status()
             ], 500);
         }
+
+    } catch (\Exception $e) {
+        Log::error('Forward Document Exception', [
+            'error' => $e->getMessage(),
+            'document_type' => $request->document_type
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => '❌ Server error: ' . $e->getMessage()
+        ], 500);
     }
+}
     // Add this method to your ReportingController
 public function dashboard()
 {

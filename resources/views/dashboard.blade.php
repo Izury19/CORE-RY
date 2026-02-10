@@ -118,10 +118,16 @@
             margin-bottom: 12px;
         }
         
-        .chart-container {
-            flex: 1;
-            position: relative;
-        }
+.chart-container {
+    flex: 1;
+    position: relative;
+    min-height: 0; /* Important for flex children */
+}
+.chart-container canvas {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
         
         /* Project Status Card */
         .project-card {
@@ -612,29 +618,33 @@ const paymentChart = new Chart(paymentCtx, {
         labels: ['Bank Transfer', 'Cash', 'GCash', 'Check'],
         datasets: [{
             data: [45, 25, 20, 10],
-            backgroundColor: [
-                '#3b82f6',
-                '#10b981', 
-                '#f59e0b',
-                '#ef4444'
-            ],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
             borderWidth: 0
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: false, // 👈 Critical: allows stretching to container
         plugins: {
             legend: {
                 position: 'bottom',
                 labels: {
-                    padding: 20,
+                    padding: 15,
                     usePointStyle: true,
-                    pointStyle: 'circle'
+                    pointStyle: 'circle',
+                    font: {
+                        size: 11
+                    }
                 }
             }
         },
-        cutout: '65%'
+        cutout: '65%',
+        layout: {
+            padding: {
+                top: 10,
+                bottom: 10
+            }
+        }
     }
 });
 
