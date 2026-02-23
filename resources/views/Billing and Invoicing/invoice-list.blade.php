@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Session Messages (FIXED: Removed duplicates) -->
+<!-- Session Messages -->
 @if(session('success'))
     <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
         <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -51,6 +51,7 @@
             <button type="button" onclick="openGenerateInvoiceModal()"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
                 + Generate Invoice
+            </button>
         </div>
     </div>
 
@@ -61,63 +62,117 @@
                 <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                AI-Powered Intelligent Billing
+                AI-Powered Billing Analytics
             </h2>
-            <p class="text-sm text-gray-600 mt-1">AI features focused on billing accuracy and duplicate prevention</p>
+            <p class="text-sm text-gray-600 mt-1">Real-time analysis of billing data with predictive insights</p>
         </div>
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Duplicate Detection AI -->
-                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                    <div class="flex items-center mb-2">
-                        <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                        <h3 class="ml-3 font-medium text-gray-900">Duplicate AI</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">
-                        Duplicate alerts:<br>
-                        <span class="font-bold text-yellow-700">{{ $aiPredictions['duplicate_alerts'] ?? 0 }}</span> potential duplicates<br>
-                        <span class="text-xs text-gray-500">Last 7 days monitoring</span>
-                    </p>
-                </div>
-                
-                <!-- Rate Validation AI -->
-                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                    <div class="flex items-center mb-2">
-                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l4-4m0 0l4 4m-4-4v18m0 0l-4-4m4 4l4-4" />
-                            </svg>
-                        </div>
-                        <h3 class="ml-3 font-medium text-gray-900">Rate AI</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">
-                        Recommended rate:<br>
-                        <span class="font-bold text-blue-700">{{ $aiPredictions['recommended_rate'] ?? '₱1,800/hr' }}</span><br>
-                        <span class="text-xs text-gray-500">Based on equipment type</span>
-                    </p>
-                </div>
-                
-                <!-- Invoice Verification AI -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Revenue Forecast -->
                 <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                     <div class="flex items-center mb-2">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                             <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                             </svg>
                         </div>
-                        <h3 class="ml-3 font-medium text-gray-900">Verification AI</h3>
+                        <h3 class="ml-3 font-medium text-gray-900">Revenue Forecast</h3>
                     </div>
                     <p class="text-sm text-gray-600">
-                        Invoices verified:<br>
-                        <span class="font-bold text-green-700">{{ $aiPredictions['verified_invoices'] ?? 0 }}</span> clean invoices<br>
-                        <span class="text-xs text-gray-500">AI-verified status</span>
+                        Next 30 days:<br>
+                        <span class="font-bold text-green-700">₱{{ number_format($aiAnalytics['revenue_forecast_30days'], 2) }}</span><br>
+                        <span class="text-xs text-gray-500">Based on historical data</span>
+                    </p>
+                </div>
+                
+                <!-- Late Paying Clients -->
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 font-medium text-gray-900">Late Paying Clients</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        {{ count($aiAnalytics['late_paying_clients']) }} clients<br>
+                        <span class="font-bold text-red-700">Payment rate < 80%</span><br>
+                        <span class="text-xs text-gray-500">{{ $aiAnalytics['total_analyzed_invoices'] }} invoices analyzed</span>
+                    </p>
+                </div>
+                
+                <!-- Equipment Performance -->
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 font-medium text-gray-900">Equipment Performance</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        Top performer:<br>
+                        <span class="font-bold text-blue-700">
+                            @if(count($aiAnalytics['equipment_revenue_analysis']) > 0)
+                                {{ ucfirst(str_replace('_', ' ', $aiAnalytics['equipment_revenue_analysis'][0]['equipment_type'])) }}
+                            @else
+                                N/A
+                            @endif
+                        </span><br>
+                        <span class="text-xs text-gray-500">Revenue analytics</span>
+                    </p>
+                </div>
+                
+                <!-- Billing Efficiency -->
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 font-medium text-gray-900">Billing Efficiency</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        Avg. collection time:<br>
+                        <span class="font-bold text-purple-700">{{ $aiAnalytics['average_billing_cycle_days'] }} days</span><br>
+                        <span class="text-xs text-gray-500">Industry avg: 45 days</span>
                     </p>
                 </div>
             </div>
+            
+            <!-- Detailed Analytics Table (Optional) -->
+            @if(count($aiAnalytics['late_paying_clients']) > 0)
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-medium text-gray-900 mb-3">⚠️ High-Risk Clients Requiring Follow-up</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Rate</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Invoices</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($aiAnalytics['late_paying_clients'] as $client)
+                            <tr>
+                                <td class="px-4 py-2 text-sm font-medium text-gray-900">{{ $client['client'] }}</td>
+                                <td class="px-4 py-2 text-sm text-red-600 font-bold">{{ $client['payment_rate'] }}%</td>
+                                <td class="px-4 py-2 text-sm text-gray-700">{{ $client['total_invoices'] }}</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <button class="text-blue-600 hover:text-blue-900 text-sm">Send Reminder</button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -198,7 +253,7 @@
                         </th>
                         
                         <!-- Amount Column -->
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider confidential-header">
                             Amount
                         </th>
                         
@@ -280,7 +335,7 @@
                                 N/A
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 amount-value">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 amount-value confidential">
                             ₱{{ number_format($invoice->total_amount ?? 0, 2) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -478,7 +533,96 @@
     </div>
 </div>
 
+<!-- Password Modal for Confidential Data -->
+<div id="passwordModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Security Verification</h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-4">Please enter your password to view confidential data.</p>
+            <form id="passwordForm">
+                <div class="mb-4">
+                    <input type="password" id="passwordInput" placeholder="Enter your password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Verify
+                    </button>
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+            <p id="passwordError" class="text-red-500 text-sm mt-2 hidden">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+</div>
+
 <script>
+// ✅ SIMPLE PASSWORD PROTECTION WITH CLICK-TO-UNLOCK BUTTONS
+let isPasswordVerified = false;
+const CORRECT_PASSWORD = 'admin123'; // Change this to your preferred password
+
+// Blur all confidential data and add unlock buttons on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.confidential').forEach(el => {
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-original', originalContent);
+        
+        // Replace with blurred content + unlock button
+        el.innerHTML = `
+            <div style="position: relative; display: inline-block; width: 100%;">
+                <div style="filter: blur(8px);">${originalContent}</div>
+                <button onclick="showPasswordModal(this)" 
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                               background: rgba(0,0,0,0.8); color: white; border: none; padding: 4px 8px; 
+                               border-radius: 4px; font-size: 12px; cursor: pointer;">
+                    🔒 Click to Unlock
+                </button>
+            </div>
+        `;
+    });
+});
+
+function showPasswordModal(buttonElement) {
+    // Store which element triggered the modal
+    window.currentUnlockElement = buttonElement.closest('.confidential');
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById('passwordInput').focus();
+    document.getElementById('passwordError').classList.add('hidden');
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+}
+
+// Handle password verification
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (password === CORRECT_PASSWORD) {
+        isPasswordVerified = true;
+        closePasswordModal();
+        
+        // Restore original content for ALL confidential elements
+        document.querySelectorAll('.confidential').forEach(el => {
+            el.innerHTML = el.getAttribute('data-original');
+        });
+    } else {
+        document.getElementById('passwordError').classList.remove('hidden');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+});
+
 // Global search function
 function globalSearch(searchValue) {
     const rows = document.querySelectorAll('.invoice-row');
@@ -564,30 +708,5 @@ function downloadProtectedPdf(invoiceId) {
     // Redirect to PDF download
     window.location.href = '{{ route("billing.invoices.pdf", ":id") }}'.replace(':id', invoiceId);
 }
-</script>
-
-<!-- 3-MINUTE AUTO-LOCK -->
-<script>
-    let inactivityTimer;
-    const INACTIVITY_LIMIT = 180000; // 3 minutes
-
-    function startInactivityTimer() {
-        inactivityTimer = setTimeout(() => {
-            alert('🔒 System auto-locked due to inactivity!');
-            window.location.href = '{{ route("auto.logout") }}';
-        }, INACTIVITY_LIMIT);
-    }
-
-    function resetInactivityTimer() {
-        clearTimeout(inactivityTimer);
-        startInactivityTimer();
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        startInactivityTimer();
-        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
-            document.addEventListener(event, resetInactivityTimer, true);
-        });
-    });
 </script>
 @endsection

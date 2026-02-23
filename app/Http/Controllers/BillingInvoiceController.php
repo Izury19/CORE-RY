@@ -7,6 +7,8 @@ use App\Models\Record;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use TCPDF;
 
 class BillingInvoiceController extends Controller
@@ -16,57 +18,89 @@ class BillingInvoiceController extends Controller
         try {
             $invoices = BillingInvoice::latest()->get();
             
-            // AI Predictions
-            $duplicateCount = $invoices->where('ai_duplicate_flag', true)->count();
-            $last30DaysRevenue = $invoices->where('created_at', '>=', now()->subDays(30))
-                ->where('status', 'billed')
-                ->sum('total_amount');
-                
-            $revenueForecast = $last30DaysRevenue > 0 ? $last30DaysRevenue * 1.15 : 185000;
-            
-            $equipmentUsage = [];
-            foreach ($invoices as $invoice) {
-                $type = $invoice->equipment_type ?? 'crane';
-                if (!isset($equipmentUsage[$type])) {
-                    $equipmentUsage[$type] = 0;
-                }
-                $equipmentUsage[$type] += $invoice->hours_used ?? 0;
-            }
-            
-            arsort($equipmentUsage);
-            $topEquipment = !empty($equipmentUsage) ? key($equipmentUsage) : 'crane';
-            
-            $rateRecommendations = [
-                'crane' => '₱2,200/hr',
-                'truck' => '₱1,500/hr',
-                'water_pump' => '₱800/hr',
-                'air_compressor' => '₱950/hr'
-            ];
-            
-            $recommendedRate = $rateRecommendations[$topEquipment] ?? '₱1,800/hr';
-
-            $aiPredictions = [
-                'duplicate_alerts' => $duplicateCount,
-                'recommended_rate' => $recommendedRate,
-                'verified_invoices' => $invoices->count() - $duplicateCount,
-                'revenue_forecast' => $revenueForecast,
-                'top_equipment' => ucfirst(str_replace('_', ' ', $topEquipment)),
-                'ai_confidence' => $invoices->count() > 10 ? 'high' : 'medium'
-            ];
+            // Get AI Analytics Data
+            $aiAnalytics = $this->getBillingAnalytics($invoices);
             
         } catch (\Exception $e) {
             $invoices = collect();
-            $aiPredictions = [
-                'duplicate_alerts' => 0,
-                'recommended_rate' => '₱1,800/hr',
-                'verified_invoices' => 0,
-                'revenue_forecast' => 0,
-                'top_equipment' => 'Crane',
-                'ai_confidence' => 'low'
+            $aiAnalytics = [
+                'revenue_forecast_30days' => 0,
+                'late_paying_clients' => [],
+                'equipment_revenue_analysis' => [],
+                'average_billing_cycle_days' => 0,
+                'total_analyzed_invoices' => 0
             ];
         }
         
-        return view('Billing and Invoicing.invoice-list', compact('invoices', 'aiPredictions'));
+        return view('Billing and Invoicing.invoice-list', compact('invoices', 'aiAnalytics'));
+    }
+
+    // Add this method to get real AI data analytics
+    private function getBillingAnalytics($invoices)
+    {
+        // 1. REVENUE FORECAST (FIXED - BASED ON ACTUAL DAYS)
+        $paidInvoices = $invoices->where('status', 'paid');
+        if ($paidInvoices->count() > 0) {
+            // Get date range of paid invoices
+            $oldest = $paidInvoices->min('created_at');
+            $newest = $paidInvoices->max('created_at');
+            $dateRange = max(1, Carbon::parse($newest)->diffInDays(Carbon::parse($oldest)));
+            
+            $totalRevenue = $paidInvoices->sum('total_amount');
+            $dailyAvgRevenue = $dateRange > 0 ? $totalRevenue / $dateRange : $totalRevenue;
+            $revenueForecast30Days = $dailyAvgRevenue * 30;
+        } else {
+            $revenueForecast30Days = 0;
+        }
+        
+        // 2. CLIENT PAYMENT BEHAVIOR (SAME)
+        $clients = $invoices->groupBy('client_name');
+        $latePayingClients = [];
+        foreach ($clients as $client => $clientInvoices) {
+            $totalInvoices = $clientInvoices->count();
+            $paidInvoices = $clientInvoices->where('status', 'paid')->count();
+            $paymentRate = $totalInvoices > 0 ? ($paidInvoices / $totalInvoices) * 100 : 0;
+            
+            if ($paymentRate < 80) {
+                $latePayingClients[] = [
+                    'client' => $client,
+                    'payment_rate' => round($paymentRate, 1),
+                    'total_invoices' => $totalInvoices
+                ];
+            }
+        }
+        
+        // 3. EQUIPMENT PERFORMANCE (SAME)
+        $equipmentRevenue = $invoices->where('status', 'paid')
+            ->groupBy('equipment_type')
+            ->map(function ($items, $key) {
+                return [
+                    'equipment_type' => $key,
+                    'total_revenue' => $items->sum('total_amount'),
+                    'invoice_count' => $items->count()
+                ];
+            })->values()->sortByDesc('total_revenue');
+        
+        // 4. BILLING CYCLE (FIXED - NO NEGATIVE VALUES)
+        $billingCycles = [];
+        foreach ($invoices as $invoice) {
+            if ($invoice->status == 'paid' && isset($invoice->updated_at)) {
+                $created = Carbon::parse($invoice->created_at);
+                $paid = Carbon::parse($invoice->updated_at);
+                if ($paid->gte($created)) { // Only count valid dates
+                    $billingCycles[] = $paid->diffInDays($created);
+                }
+            }
+        }
+        $avgBillingCycle = !empty($billingCycles) ? array_sum($billingCycles) / count($billingCycles) : 0;
+        
+        return [
+            'revenue_forecast_30days' => round($revenueForecast30Days, 2),
+            'late_paying_clients' => $latePayingClients,
+            'equipment_revenue_analysis' => $equipmentRevenue,
+            'average_billing_cycle_days' => round($avgBillingCycle, 1),
+            'total_analyzed_invoices' => $invoices->count()
+        ];
     }
 
     public function show($id)
@@ -119,164 +153,84 @@ class BillingInvoiceController extends Controller
             ->with('success', 'AI scan completed! Potential duplicates flagged for review.');
     }
 
-   public function downloadPdf($id)
-{
-    try {
-        $invoice = BillingInvoice::findOrFail($id);
-        
-        // Generate password hint for user
-        $passwordHint = str_replace(' ', '', strtolower($invoice->client_name)) . $invoice->id;
-        
-        // Store in session to show on page (optional)
-        session(['pdf_password' => $passwordHint]);
-        
-        $pdf = Pdf::loadView('Billing and Invoicing.invoice-pdf', compact('invoice'))
-            ->setPaper('a4')
-            ->setOption('default-header', false)
-            ->setOption('default-footer', false);
+    public function downloadPdf($id)
+    {
+        try {
+            $invoice = BillingInvoice::findOrFail($id);
+            
+            // Generate password hint for user
+            $passwordHint = str_replace(' ', '', strtolower($invoice->client_name)) . $invoice->id;
+            
+            // Store in session to show on page (optional)
+            session(['pdf_password' => $passwordHint]);
+            
+            $pdf = Pdf::loadView('Billing and Invoicing.invoice-pdf', compact('invoice'))
+                ->setPaper('a4')
+                ->setOption('default-header', false)
+                ->setOption('default-footer', false);
 
-        return $pdf->download("invoice-{$id}.pdf");
-        
-    } catch (\Exception $e) {
-        return redirect()->route('billing.invoices.index')->withErrors([
-            'pdf_error' => 'Failed to generate PDF.'
-        ]);
+            return $pdf->download("invoice-{$id}.pdf");
+            
+        } catch (\Exception $e) {
+            return redirect()->route('billing.invoices.index')->withErrors([
+                'pdf_error' => 'Failed to generate PDF.'
+            ]);
+        }
     }
-}
 
     public function demoStore(Request $request)
-{
-    $request->validate([
-        'client_name' => 'required',
-        'equipment_type' => 'required|in:mobile_crane,tower_crane,dump_truck,concrete_mixer',
-        'hours_used' => 'required|numeric|min:1'
-    ]);
+    {
+        $request->validate([
+            'client_name' => 'required',
+            'equipment_type' => 'required|in:mobile_crane,tower_crane,dump_truck,concrete_mixer',
+            'hours_used' => 'required|numeric|min:1'
+        ]);
 
-    $rates = [
-        'mobile_crane' => 2500,
-        'tower_crane' => 2500,
-        'dump_truck' => 1800,
-        'concrete_mixer' => 2000,
-    ];
-
-    $hourlyRate = $rates[$request->equipment_type];
-    $subtotal = $request->hours_used * $hourlyRate;
-    $vat = $subtotal * 0.12;
-    $totalAmount = $subtotal + $vat;
-    
-    $equipmentId = strtoupper(substr($request->equipment_type, 0, 3)) . '-' . rand(1000, 9999);
-
-    // Create invoice WITHOUT creating record
-    $invoice = BillingInvoice::create([
-        'invoice_uid' => 'INV-' . now()->format('ymd') . '-' . rand(1000, 9999),
-        'client_name' => $request->client_name,
-        'equipment_type' => $request->equipment_type,
-        'equipment_id' => $equipmentId,
-        'hours_used' => $request->hours_used,
-        'hourly_rate' => $hourlyRate,
-        'total_amount' => $totalAmount,
-        'billing_period_start' => now()->subDays(2),
-        'billing_period_end' => now(),
-        'status' => 'issued',
-        'sent_to_record_payment' => true
-    ]);
-
-    // ✅ NO MORE FORCE INSERT TO RECORDS TABLE!
-    // Records will be created ONLY when payment is recorded
-
-    return redirect()->route('billing.invoices.index')
-        ->with('success', '✅ Invoice generated successfully!');
-}
-   // Add this method at the bottom of your BillingInvoiceController class
-public function forwardIssuedBill(Request $request, $invoiceId)
-{
-    $invoice = BillingInvoice::findOrFail($invoiceId);
-    
-    if (!in_array($invoice->status, ['issued', 'billed'])) {
-        return back()->with('error', 'Only issued/billed invoices can be forwarded to Financials System.');
-    }
-
-    try {
-        // PREPARE DATA IN EXACT FORMAT THEY EXPECT
-        $data = [
-            'action' => 'transfer_to_collections',
-            'invoice_number' => 'INV-' . str_pad($invoice->id, 3, '0', STR_PAD_LEFT),
-            'client_name' => $invoice->client_name,
-            'billing_date' => \Carbon\Carbon::parse($invoice->created_at)->format('Y-m-d'),
-            'due_date' => \Carbon\Carbon::parse($invoice->due_date ?? now()->addDays(30))->format('Y-m-d'),
-            'amount_base' => $invoice->total_amount,
-            'vat_applied' => 'No',
-            'notes' => 'Auto-transferred from Billing System'
+        $rates = [
+            'mobile_crane' => 2500,
+            'tower_crane' => 2500,
+            'dump_truck' => 1800,
+            'concrete_mixer' => 2000,
         ];
 
-        // SEND TO THEIR EXACT ENDPOINT
-        $response = Http::withOptions(['verify' => false, 'timeout' => 30])
-            ->post('https://financials.cranecali-ms.com/collections_api.php', $data);
+        $hourlyRate = $rates[$request->equipment_type];
+        $subtotal = $request->hours_used * $hourlyRate;
+        $vat = $subtotal * 0.12;
+        $totalAmount = $subtotal + $vat;
+        
+        $equipmentId = strtoupper(substr($request->equipment_type, 0, 3)) . '-' . rand(1000, 9999);
 
-        if ($response->successful()) {
-            return back()->with('success', '✅ Invoice successfully forwarded to Financials System!');
-        } else {
-            \Log::error('Financials API Error', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-                'invoice_id' => $invoice->id
-            ]);
-            
-            return back()->with('error', '❌ Failed to send. Status: ' . $response->status());
-        }
+        // Create invoice WITHOUT creating record
+        $invoice = BillingInvoice::create([
+            'invoice_uid' => 'INV-' . now()->format('ymd') . '-' . rand(1000, 9999),
+            'client_name' => $request->client_name,
+            'equipment_type' => $request->equipment_type,
+            'equipment_id' => $equipmentId,
+            'hours_used' => $request->hours_used,
+            'hourly_rate' => $hourlyRate,
+            'total_amount' => $totalAmount,
+            'billing_period_start' => now()->subDays(2),
+            'billing_period_end' => now(),
+            'status' => 'issued',
+            'sent_to_record_payment' => true
+        ]);
 
-    } catch (\Exception $e) {
-        return back()->with('error', '❌ Server error: ' . $e->getMessage());
-    }
-}
+        // ✅ NO MORE FORCE INSERT TO RECORDS TABLE!
+        // Records will be created ONLY when payment is recorded
 
-private function generateInvoicePdf($invoice)
-{
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-    $pdf->SetCreator('Billing System');
-    $pdf->SetAuthor('Admin');
-    $pdf->SetTitle('Invoice: ' . $invoice->invoice_uid);
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
-    $pdf->AddPage();
-    $pdf->SetFont('helvetica', '', 10);
-    
-    $html = '<h2>INVOICE</h2>';
-    $html .= '<p><strong>Client:</strong> ' . $invoice->client_name . '</p>';
-    $html .= '<p><strong>Amount:</strong> ₱' . number_format($invoice->total_amount, 2) . '</p>';
-    $html .= '<p><strong>Date:</strong> ' . $invoice->created_at . '</p>';
-    
-    $pdf->writeHTML($html, true, false, true, false, '');
-    $pdf->SetProtection(['print', 'copy'], 'document', 'admin');
-    
-    return $pdf->Output('invoice_' . $invoice->id . '.pdf', 'S');
-}
-
-public function bulkForwardToFinancials(Request $request)
-{
-    \Log::info('=== BULK FORWARD TO FINANCIALS ===', ['all_request' => $request->all()]);
-    
-    $request->validate([
-        'invoice_ids_json' => 'required|string'
-    ]);
-    
-    $invoiceIds = json_decode($request->invoice_ids_json, true);
-    
-    if (!is_array($invoiceIds) || empty($invoiceIds)) {
-        return back()->with('error', '❌ Invalid invoice selection.');
+        return redirect()->route('billing.invoices.index')
+            ->with('success', '✅ Invoice generated successfully!');
     }
     
-    $successCount = 0;
-    $errorCount = 0;
-    
-    foreach ($invoiceIds as $invoiceId) {
-        $invoice = BillingInvoice::find($invoiceId);
+    // Add this method at the bottom of your BillingInvoiceController class
+    public function forwardIssuedBill(Request $request, $invoiceId)
+    {
+        $invoice = BillingInvoice::findOrFail($invoiceId);
         
-        if (!$invoice || !in_array(strtolower($invoice->status), ['issued', 'billed'])) {
-            $errorCount++;
-            continue;
+        if (!in_array($invoice->status, ['issued', 'billed'])) {
+            return back()->with('error', 'Only issued/billed invoices can be forwarded to Financials System.');
         }
-        
+
         try {
             // PREPARE DATA IN EXACT FORMAT THEY EXPECT
             $data = [
@@ -286,48 +240,127 @@ public function bulkForwardToFinancials(Request $request)
                 'billing_date' => \Carbon\Carbon::parse($invoice->created_at)->format('Y-m-d'),
                 'due_date' => \Carbon\Carbon::parse($invoice->due_date ?? now()->addDays(30))->format('Y-m-d'),
                 'amount_base' => $invoice->total_amount,
-                'vat_applied' => 'No', // Based on their system
+                'vat_applied' => 'No',
                 'notes' => 'Auto-transferred from Billing System'
             ];
-            
+
             // SEND TO THEIR EXACT ENDPOINT
             $response = Http::withOptions(['verify' => false, 'timeout' => 30])
                 ->post('https://financials.cranecali-ms.com/collections_api.php', $data);
-                
+
             if ($response->successful()) {
-                $successCount++;
-                \Log::info('✅ Invoice forwarded successfully', [
-                    'invoice_id' => $invoiceId,
-                    'response' => $response->json()
-                ]);
+                return back()->with('success', '✅ Invoice successfully forwarded to Financials System!');
             } else {
-                $errorCount++;
-                \Log::error('API Error', [
-                    'invoice_id' => $invoiceId,
+                \Log::error('Financials API Error', [
                     'status' => $response->status(),
-                    'body' => $response->body()
+                    'body' => $response->body(),
+                    'invoice_id' => $invoice->id
                 ]);
+                
+                return back()->with('error', '❌ Failed to send. Status: ' . $response->status());
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', '❌ Server error: ' . $e->getMessage());
+        }
+    }
+
+    private function generateInvoicePdf($invoice)
+    {
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+        $pdf->SetCreator('Billing System');
+        $pdf->SetAuthor('Admin');
+        $pdf->SetTitle('Invoice: ' . $invoice->invoice_uid);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->AddPage();
+        $pdf->SetFont('helvetica', '', 10);
+        
+        $html = '<h2>INVOICE</h2>';
+        $html .= '<p><strong>Client:</strong> ' . $invoice->client_name . '</p>';
+        $html .= '<p><strong>Amount:</strong> ₱' . number_format($invoice->total_amount, 2) . '</p>';
+        $html .= '<p><strong>Date:</strong> ' . $invoice->created_at . '</p>';
+        
+        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->SetProtection(['print', 'copy'], 'document', 'admin');
+        
+        return $pdf->Output('invoice_' . $invoice->id . '.pdf', 'S');
+    }
+
+    public function bulkForwardToFinancials(Request $request)
+    {
+        \Log::info('=== BULK FORWARD TO FINANCIALS ===', ['all_request' => $request->all()]);
+        
+        $request->validate([
+            'invoice_ids_json' => 'required|string'
+        ]);
+        
+        $invoiceIds = json_decode($request->invoice_ids_json, true);
+        
+        if (!is_array($invoiceIds) || empty($invoiceIds)) {
+            return back()->with('error', '❌ Invalid invoice selection.');
+        }
+        
+        $successCount = 0;
+        $errorCount = 0;
+        
+        foreach ($invoiceIds as $invoiceId) {
+            $invoice = BillingInvoice::find($invoiceId);
+            
+            if (!$invoice || !in_array(strtolower($invoice->status), ['issued', 'billed'])) {
+                $errorCount++;
+                continue;
             }
             
-        } catch (\Exception $e) {
-            $errorCount++;
-            \Log::error('Forward Exception', [
-                'invoice_id' => $invoiceId,
-                'error' => $e->getMessage()
-            ]);
+            try {
+                // PREPARE DATA IN EXACT FORMAT THEY EXPECT
+                $data = [
+                    'action' => 'transfer_to_collections',
+                    'invoice_number' => 'INV-' . str_pad($invoice->id, 3, '0', STR_PAD_LEFT),
+                    'client_name' => $invoice->client_name,
+                    'billing_date' => \Carbon\Carbon::parse($invoice->created_at)->format('Y-m-d'),
+                    'due_date' => \Carbon\Carbon::parse($invoice->due_date ?? now()->addDays(30))->format('Y-m-d'),
+                    'amount_base' => $invoice->total_amount,
+                    'vat_applied' => 'No', // Based on their system
+                    'notes' => 'Auto-transferred from Billing System'
+                ];
+                
+                // SEND TO THEIR EXACT ENDPOINT
+                $response = Http::withOptions(['verify' => false, 'timeout' => 30])
+                    ->post('https://financials.cranecali-ms.com/collections_api.php', $data);
+                    
+                if ($response->successful()) {
+                    $successCount++;
+                    \Log::info('✅ Invoice forwarded successfully', [
+                        'invoice_id' => $invoiceId,
+                        'response' => $response->json()
+                    ]);
+                } else {
+                    $errorCount++;
+                    \Log::error('API Error', [
+                        'invoice_id' => $invoiceId,
+                        'status' => $response->status(),
+                        'body' => $response->body()
+                    ]);
+                }
+                
+            } catch (\Exception $e) {
+                $errorCount++;
+                \Log::error('Forward Exception', [
+                    'invoice_id' => $invoiceId,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
-    }
-    
-    if ($successCount > 0) {
-        $message = "✅ Successfully forwarded {$successCount} invoice(s) to Financials System!";
-        if ($errorCount > 0) {
-            $message .= " ❌ {$errorCount} failed.";
+        
+        if ($successCount > 0) {
+            $message = "✅ Successfully forwarded {$successCount} invoice(s) to Financials System!";
+            if ($errorCount > 0) {
+                $message .= " ❌ {$errorCount} failed.";
+            }
+            return back()->with('success', $message);
+        } else {
+            return back()->with('error', '❌ All selected invoices failed to forward.');
         }
-        return back()->with('success', $message);
-    } else {
-        return back()->with('error', '❌ All selected invoices failed to forward.');
     }
 }
-
-
-}       

@@ -1,5 +1,5 @@
-@extends('layouts.app')
 
+@extends('layouts.app')
 @section('content')
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -11,14 +11,7 @@
                     <p class="text-gray-600 mt-1">Centralized intelligence from all business units</p>
                 </div>
                 <div class="mt-4 md:mt-0 flex space-x-3">
-                    <a href="{{ route('financial-report.export.excel') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
-                       target="_blank">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Excel
-                    </a>
+    
                     <a href="{{ route('financial-report.export.pdf') }}" 
                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
                        target="_blank">
@@ -33,33 +26,7 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-6 py-6">
-        <!-- Filters Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Data Filters</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
-                    <select id="periodFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                    <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                    <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="flex items-end">
-                    <button onclick="applyFilters()" 
-                            class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        Apply
-                    </button>
-                </div>
-            </div>
-        </div>
+    
 
        <!-- SECTION NAVIGATION BUTTONS -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -496,102 +463,10 @@
             </div>
         </div>
 
-        <!-- PROJECT STATUS UPDATES SECTION -->
-        <div id="projects" class="mb-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200 bg-green-50">
-                    <h2 class="text-xl font-bold text-green-900">Project Status Updates</h2>
-                    <p class="text-sm text-green-700 mt-1">Project progress sent to Project Management (CORE 4) system</p>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <span class="text-sm font-medium text-gray-900">Crane Installation - Manila</span>
-                            <span class="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">Completed</span>
-                        </div>
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <span class="text-sm font-medium text-gray-900">Truck Fleet Upgrade</span>
-                            <span class="px-3 py-1 text-sm font-medium bg-yellow-100 text-yellow-800 rounded-full">In Progress</span>
-                        </div>
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <span class="text-sm font-medium text-gray-900">Equipment Certification</span>
-                            <span class="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">Pending Review</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Forward Files Button for Projects -->
-                    <div class="mt-6">
-                        <button type="button" 
-                                onclick="openForwardModal('Project Status Update', 'Project')" 
-                                class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            Forward Project Report
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- REGULATORY COMPLIANCE SECTION -->
-        <div id="compliance" class="mb-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200 bg-red-50">
-                    <h2 class="text-xl font-bold text-red-900">Regulatory Compliance Reports</h2>
-                    <p class="text-sm text-red-700 mt-1">Compliance reports sent to Document Management & Regulatory Compliance (CORE 2) system</p>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                    </svg>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900">Safety Compliance Report</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900">Equipment Certification</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                    </svg>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900">Environmental Compliance</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Forward Files Button for Compliance -->
-                    <div class="mt-6">
-                        <button type="button" 
-                                onclick="openForwardModal('Regulatory Compliance Report', 'Compliance')" 
-                                class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            Forward Compliance Report
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
      
         
+                
+                    
     </div>
 </div>
 
@@ -603,43 +478,97 @@
     </div>
 </div>
 
+<!-- Password Modal for Confidential Data -->
+<div id="passwordModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Security Verification</h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-4">Please enter your password to view confidential data.</p>
+            <form id="passwordForm">
+                <div class="mb-4">
+                    <input type="password" id="passwordInput" placeholder="Enter your password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Verify
+                    </button>
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+            <p id="passwordError" class="text-red-500 text-sm mt-2 hidden">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+</div>
+
 <script>
-// PROPER AUTO-BLUR WITH RESET TIMER
-let blurTimeout;
+// ✅ SIMPLE PASSWORD PROTECTION WITH CLICK-TO-UNLOCK BUTTONS
+let isPasswordVerified = false;
+const CORRECT_PASSWORD = 'admin123'; // Change this to your preferred password
 
-function startBlurTimer() {
-    if (blurTimeout) {
-        clearTimeout(blurTimeout);
-    }
-    
-    blurTimeout = setTimeout(function() {
-        document.querySelectorAll('.confidential').forEach(el => {
-            el.style.filter = 'blur(8px)';
-        });
-    }, 3000);
-}
-
-function resetBlurTimer() {
-    if (blurTimeout) {
-        clearTimeout(blurTimeout);
-    }
-    
-    document.querySelectorAll('.confidential').forEach(el => {
-        el.style.filter = 'blur(0px)';
-    });
-    
-    startBlurTimer();
-}
-
+// Blur all confidential data and add unlock buttons on page load
 document.addEventListener('DOMContentLoaded', function() {
-    startBlurTimer();
+    document.querySelectorAll('.confidential').forEach(el => {
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-original', originalContent);
+        
+        // Replace with blurred content + unlock button
+        el.innerHTML = `
+            <div style="position: relative; display: inline-block; width: 100%;">
+                <div style="filter: blur(8px);">${originalContent}</div>
+                <button onclick="showPasswordModal(this)" 
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                               background: rgba(0,0,0,0.8); color: white; border: none; padding: 4px 8px; 
+                               border-radius: 4px; font-size: 12px; cursor: pointer;">
+                    🔒 Click to Unlock
+                </button>
+            </div>
+        `;
+    });
 });
 
-['mousemove', 'keypress', 'click', 'scroll', 'touchstart'].forEach(event => {
-    document.addEventListener(event, resetBlurTimer, true);
+function showPasswordModal(buttonElement) {
+    // Store which element triggered the modal
+    window.currentUnlockElement = buttonElement.closest('.confidential');
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById('passwordInput').focus();
+    document.getElementById('passwordError').classList.add('hidden');
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+}
+
+// Handle password verification
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (password === CORRECT_PASSWORD) {
+        isPasswordVerified = true;
+        closePasswordModal();
+        
+        // Restore original content for ALL confidential elements
+        document.querySelectorAll('.confidential').forEach(el => {
+            el.innerHTML = el.getAttribute('data-original');
+        });
+    } else {
+        document.getElementById('passwordError').classList.remove('hidden');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
 });
 
-// Forward Files Modal Functions
+// Existing forward modal functions
 function openForwardModal(documentType, category) {
     localStorage.setItem('forwardDocumentType', documentType);
     localStorage.setItem('forwardCategory', category);
@@ -651,16 +580,23 @@ function closeForwardModal() {
 }
 
 window.onclick = function(event) {
-    const modal = document.getElementById('forwardModal');ss
-    if (event.target === modal) {
+    const forwardModal = document.getElementById('forwardModal');
+    const passwordModal = document.getElementById('passwordModal');
+    
+    if (forwardModal && event.target === forwardModal) {
         closeForwardModal();
+    }
+    if (passwordModal && event.target === passwordModal) {
+        closePasswordModal();
     }
 }
 
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeForwardModal();
+        closePasswordModal();
     }
 });
 </script>
 @endsection
+```

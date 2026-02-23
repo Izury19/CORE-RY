@@ -44,7 +44,7 @@
     <div class="text-center mt-6">
         <button id="resendBtn" onclick="resendOTP()" disabled
             class="bg-gray-400 text-white font-bold py-2 px-4 rounded-full cursor-not-allowed transition-colors">
-            Resend OTP (<span id="timer">30</span>s)
+            Resend OTP (<span id="timer">60</span>s)
         </button>
     </div>
 

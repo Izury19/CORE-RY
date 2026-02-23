@@ -37,7 +37,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-gray-500 mb-2">Total Revenue Received</h3>
-                    <p class="text-2xl font-bold text-gray-900">₱{{ number_format($totalReceived ?? 0, 2) }}</p>
+                    <p class="text-2xl font-bold text-gray-900 confidential">₱{{ number_format($totalReceived ?? 0, 2) }}</p>
                     <p class="text-xs text-green-600 mt-1">From crane and truck rental services</p>
                 </div>
                 <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -163,11 +163,11 @@
                                 N/A
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium confidential">
                             @if($payment->payment_status === null)
-                                <span class="text-gray-500">₱{{ number_format($payment->total_amount, 2) }} </span>
+                                ₱{{ number_format($payment->total_amount, 2) }}
                             @else
-                                <span class="text-green-600">₱{{ number_format($payment->amount_paid, 2) }}</span>
+                                ₱{{ number_format($payment->amount_paid, 2) }}
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
@@ -384,7 +384,96 @@
     </div>
 </div>
 
+<!-- Password Modal for Confidential Data -->
+<div id="passwordModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Security Verification</h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-4">Please enter your password to view confidential data.</p>
+            <form id="passwordForm">
+                <div class="mb-4">
+                    <input type="password" id="passwordInput" placeholder="Enter your password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Verify
+                    </button>
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+            <p id="passwordError" class="text-red-500 text-sm mt-2 hidden">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+</div>
+
 <script>
+// ✅ SIMPLE PASSWORD PROTECTION WITH CLICK-TO-UNLOCK BUTTONS
+let isPasswordVerified = false;
+const CORRECT_PASSWORD = 'admin123'; // Change this to your preferred password
+
+// Blur all confidential data and add unlock buttons on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.confidential').forEach(el => {
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-original', originalContent);
+        
+        // Replace with blurred content + unlock button
+        el.innerHTML = `
+            <div style="position: relative; display: inline-block; width: 100%;">
+                <div style="filter: blur(8px);">${originalContent}</div>
+                <button onclick="showPasswordModal(this)" 
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                               background: rgba(0,0,0,0.8); color: white; border: none; padding: 4px 8px; 
+                               border-radius: 4px; font-size: 12px; cursor: pointer;">
+                    🔒 Click to Unlock
+                </button>
+            </div>
+        `;
+    });
+});
+
+function showPasswordModal(buttonElement) {
+    // Store which element triggered the modal
+    window.currentUnlockElement = buttonElement.closest('.confidential');
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById('passwordInput').focus();
+    document.getElementById('passwordError').classList.add('hidden');
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+}
+
+// Handle password verification
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (password === CORRECT_PASSWORD) {
+        isPasswordVerified = true;
+        closePasswordModal();
+        
+        // Restore original content for ALL confidential elements
+        document.querySelectorAll('.confidential').forEach(el => {
+            el.innerHTML = el.getAttribute('data-original');
+        });
+    } else {
+        document.getElementById('passwordError').classList.remove('hidden');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+});
+
 function openRecordPaymentModal() {
     document.getElementById('recordPaymentModal').classList.remove('hidden');
 }

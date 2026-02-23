@@ -246,3 +246,15 @@ Route::post('/forward-document', [ReportingController::class, 'forwardDocument']
 Route::get('/forward-files', function () {
     return view('forward-form');
 })->name('forward.files');
+
+// Add this line in your web.php
+Route::post('/verify-password', [ReportingController::class, 'verifyPassword'])->name('verify.password');
+
+// Financial Report
+Route::get('/financial-report', [ReportingController::class, 'index'])->name('financial-report');
+
+// Contract Management  
+Route::get('/contract-management', [ContractController::class, 'index'])->name('contract.management');
+
+// Maintenance Dashboard
+Route::get('/maintenance-dashboard', [MaintenanceController::class, 'dashboard'])->name('maintenance-dashboard');

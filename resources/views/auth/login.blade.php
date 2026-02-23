@@ -113,10 +113,7 @@
 
                 <!-- Remember + Forgot -->
                 <div class="flex items-center justify-between text-xs mt-1">
-                    <label class="flex items-center gap-1 text-gray-900">
-                        <input type="checkbox" name="remember" class="h-3 w-3 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span>Remember me</span>
-                    </label>
+                    
                     <button type="button" data-modal-target="forgotPasswordModal" data-modal-toggle="forgotPasswordModal" class="opacity-60 text-gray-900 font-semibold hover:underline">
                         Forgot Password?
                     </button>

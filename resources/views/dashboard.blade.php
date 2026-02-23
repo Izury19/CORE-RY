@@ -118,16 +118,17 @@
             margin-bottom: 12px;
         }
         
-.chart-container {
-    flex: 1;
-    position: relative;
-    min-height: 0; /* Important for flex children */
-}
-.chart-container canvas {
-    max-height: 100%;
-    max-width: 100%;
-    object-fit: contain;
-}
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+        
+        .chart-container canvas {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
         
         /* Project Status Card */
         .project-card {
@@ -426,7 +427,7 @@
             <!-- KPI Cards -->
             <div class="kpi-grid">
                 <!-- Total Revenue -->
-                <div class="kpi-card">
+                <a href="{{ route('financial-report') }}" class="kpi-card hover:shadow-md transition-shadow">
                     <div class="kpi-icon bg-green-100">
                         <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -436,11 +437,11 @@
                         <h4>Total Revenue</h4>
                         <p>Payment Management</p>
                     </div>
-                    <div class="kpi-value">₱{{ number_format($totalRevenue, 2) }}</div>
-                </div>
+                    <div class="kpi-value confidential">₱{{ number_format($totalRevenue, 2) }}</div>
+                </a>
 
                 <!-- Collection Rate -->
-                <div class="kpi-card">
+                <a href="{{ route('financial-report') }}" class="kpi-card hover:shadow-md transition-shadow">
                     <div class="kpi-icon bg-blue-100">
                         <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -451,10 +452,10 @@
                         <p>Payment performance</p>
                     </div>
                     <div class="kpi-value">{{ $collectionRatePercent }}%</div>
-                </div>
+                </a>
 
                 <!-- Active Contracts -->
-                <div class="kpi-card">
+                <a href="{{ route('contract.management') }}" class="kpi-card hover:shadow-md transition-shadow">
                     <div class="kpi-icon bg-purple-100">
                         <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-3-3H6a3 3 0 00-3 3v2h5m14-4a2 2 0 012 2v2H3v-2a2 2 0 012-2h14m-9-4a2 2 0 012 2v2H8v-2a2 2 0 012-2h4M9 8a2 2 0 012-2h2a2 2 0 012 2v2H9V8z" />
@@ -464,11 +465,11 @@
                         <h4>Active Contracts</h4>
                         <p>Contract Management</p>
                     </div>
-                    <div class="kpi-value">{{ $activeContracts }}</div>
-                </div>
+                    <div class="kpi-value confidential">{{ $activeContracts }}</div>
+                </a>
 
                 <!-- Maintenance Status -->
-                <div class="kpi-card">
+                <a href="{{ route('maintenance-dashboard') }}" class="kpi-card hover:shadow-md transition-shadow">
                     <div class="kpi-icon bg-yellow-100">
                         <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -479,22 +480,10 @@
                         <h4>Maintenance Status</h4>
                         <p>Completed this month</p>
                     </div>
-                    <div class="kpi-value">{{ $completedThisMonth }}</div>
-                </div>
-
-                <!-- Compliance Reports -->
-                <div class="kpi-card">
-                    <div class="kpi-icon bg-red-100">
-                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                    <div class="kpi-content">
-                        <h4>Compliance Reports</h4>
-                        <p>Sent to CORE 2</p>
-                    </div>
-                    <div class="kpi-value">{{ $complianceReports }}</div>
-                </div>
+                    <div class="kpi-value confidential">{{ $completedThisMonth }}</div>
+                </a>
+            </div>
+                
             </div>
 
             <!-- Charts Section -->
@@ -523,7 +512,7 @@
 
             <!-- Project Status Updates -->
             <div class="project-card">
-                <div class="project-title">Project Status Updates (CORE 4)</div>
+                <div class="project-title">Project Status Updates</div>
                 <div class="project-content">
                     <div class="project-item">
                         <span>Crane Installation - Manila</span>
@@ -551,6 +540,37 @@
     </div>
 </div>
 
+<!-- Password Modal for Confidential Data -->
+<div id="passwordModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Security Verification</h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-4">Please enter your password to view confidential data.</p>
+            <form id="passwordForm">
+                <div class="mb-4">
+                    <input type="password" id="passwordInput" placeholder="Enter your password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Verify
+                    </button>
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+            <p id="passwordError" class="text-red-500 text-sm mt-2 hidden">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <footer class="bg-[#1f1f1f] text-white py-3 px-4 shadow-lg flex justify-center items-center">
@@ -563,6 +583,64 @@
 <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 
 <script>
+// ✅ SIMPLE PASSWORD PROTECTION WITH CLICK-TO-UNLOCK BUTTONS
+let isPasswordVerified = false;
+const CORRECT_PASSWORD = 'admin123'; // Change this to your preferred password
+
+// Blur all confidential data and add unlock buttons on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.confidential').forEach(el => {
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-original', originalContent);
+        
+        // Replace with blurred content + unlock button
+        el.innerHTML = `
+            <div style="position: relative; display: inline-block; width: 100%;">
+                <div style="filter: blur(8px);">${originalContent}</div>
+                <button onclick="showPasswordModal(this)" 
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                               background: rgba(0,0,0,0.8); color: white; border: none; padding: 4px 8px; 
+                               border-radius: 4px; font-size: 12px; cursor: pointer;">
+                    🔒 Click to Unlock
+                </button>
+            </div>
+        `;
+    });
+});
+
+function showPasswordModal(buttonElement) {
+    // Store which element triggered the modal
+    window.currentUnlockElement = buttonElement.closest('.confidential');
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById('passwordInput').focus();
+    document.getElementById('passwordError').classList.add('hidden');
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+}
+
+// Handle password verification
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (password === CORRECT_PASSWORD) {
+        isPasswordVerified = true;
+        closePasswordModal();
+        
+        // Restore original content for ALL confidential elements
+        document.querySelectorAll('.confidential').forEach(el => {
+            el.innerHTML = el.getAttribute('data-original');
+        });
+    } else {
+        document.getElementById('passwordError').classList.remove('hidden');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+});
+
 // Revenue Trend Chart
 const revenueCtx = document.getElementById('revenueChart').getContext('2d');
 const revenueChart = new Chart(revenueCtx, {
@@ -624,7 +702,7 @@ const paymentChart = new Chart(paymentCtx, {
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false, // 👈 Critical: allows stretching to container
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 position: 'bottom',

@@ -49,6 +49,17 @@
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+/* Equipment select styling */
+.equipment-select {
+    position: relative;
+}
+.equipment-select select {
+    appearance: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 9l4-4 4 4m0 6l-4 4-4-4' /%3E%3C/svg%3E") no-repeat right 0.5rem center/1rem;
+    padding-right: 2rem;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -95,6 +106,38 @@
 .cancel-link:hover {
     color: #334155;
 }
+
+/* Equipment preview container */
+.equipment-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+.equipment-preview img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.equipment-preview .equipment-info {
+    flex: 1;
+}
+.equipment-preview h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #1e293b;
+}
+.equipment-preview p {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin: 0;
+}
 </style>
 
 <div class="form-container">
@@ -124,14 +167,25 @@
             
             <div class="form-group">
                 <label class="form-label" for="equipment_name">Equipment Name *</label>
-                <select id="equipment_name" name="equipment_name" class="form-control" required>
-                    <option value="">Select Equipment</option>
-                    <option value="Liebherr LTM 11200 Crane" {{ old('equipment_name') == 'Liebherr LTM 11200 Crane' ? 'selected' : '' }}>Liebherr LTM 11200 Crane</option>
-                    <option value="Tadano TG-500E Mobile Crane" {{ old('equipment_name') == 'Tadano TG-500E Mobile Crane' ? 'selected' : '' }}>Tadano TG-500E Mobile Crane</option>
-                    <option value="Kobelco CK-500G Tower Crane" {{ old('equipment_name') == 'Kobelco CK-500G Tower Crane' ? 'selected' : '' }}>Kobelco CK-500G Tower Crane</option>
-                    <option value="Zoomlion ZTC250" {{ old('equipment_name') == 'Zoomlion ZTC250' ? 'selected' : '' }}>Zoomlion ZTC250</option>
-                    <option value="Manitowoc MLC300" {{ old('equipment_name') == 'Manitowoc MLC300' ? 'selected' : '' }}>Manitowoc MLC300</option>
-                </select>
+                <div class="equipment-select">
+                    <select id="equipment_name" name="equipment_name" class="form-control" required onchange="updateEquipmentPreview()">
+                        <option value="">Select Equipment</option>
+                        <option value="Liebherr LTM 11200 Crane" data-image="{{ asset('images/crane-liebherr.jpg') }}" {{ old('equipment_name') == 'Liebherr LTM 11200 Crane' ? 'selected' : '' }}>Liebherr LTM 11200 Crane</option>
+                        <option value="Tadano TG-500E Mobile Crane" data-image="{{ asset('images/crane-tadano.jpg') }}" {{ old('equipment_name') == 'Tadano TG-500E Mobile Crane' ? 'selected' : '' }}>Tadano TG-500E Mobile Crane</option>
+                        <option value="Kobelco CK-500G Tower Crane" data-image="{{ asset('images/crane-kobelco.jpg') }}" {{ old('equipment_name') == 'Kobelco CK-500G Tower Crane' ? 'selected' : '' }}>Kobelco CK-500G Tower Crane</option>
+                        <option value="Zoomlion ZTC250" data-image="{{ asset('images/crane-zoomlion.jpg') }}" {{ old('equipment_name') == 'Zoomlion ZTC250' ? 'selected' : '' }}>Zoomlion ZTC250</option>
+                        <option value="Manitowoc MLC300" data-image="{{ asset('images/crane-manitowoc.jpg') }}" {{ old('equipment_name') == 'Manitowoc MLC300' ? 'selected' : '' }}>Manitowoc MLC300</option>
+                    </select>
+                </div>
+                
+                <!-- Equipment Preview -->
+                <div id="equipmentPreview" class="equipment-preview" style="display: none;">
+                    <img id="equipmentImage" src="" alt="Equipment Image">
+                    <div class="equipment-info">
+                        <h4 id="equipmentTitle"></h4>
+                        <p id="equipmentDescription"></p>
+                    </div>
+                </div>
             </div>
 
             <div class="form-row">
@@ -240,6 +294,37 @@
 </div>
 
 <script>
+// Equipment descriptions
+const equipmentDescriptions = {
+    'Liebherr LTM 11200 Crane': 'World\'s strongest telescopic crane with 1200-ton capacity',
+    'Tadano TG-500E Mobile Crane': 'All-terrain mobile crane with excellent maneuverability',
+    'Kobelco CK-500G Tower Crane': 'Heavy-duty tower crane for high-rise construction',
+    'Zoomlion ZTC250': 'Rough terrain crane with 25-ton lifting capacity',
+    'Manitowoc MLC300': 'Compact crawler crane ideal for confined spaces'
+};
+
+function updateEquipmentPreview() {
+    const select = document.getElementById('equipment_name');
+    const preview = document.getElementById('equipmentPreview');
+    const image = document.getElementById('equipmentImage');
+    const title = document.getElementById('equipmentTitle');
+    const description = document.getElementById('equipmentDescription');
+    
+    const selectedOption = select.options[select.selectedIndex];
+    const selectedValue = select.value;
+    const imageUrl = selectedOption.getAttribute('data-image');
+    
+    if (selectedValue && imageUrl) {
+        image.src = imageUrl;
+        title.textContent = selectedValue;
+        description.textContent = equipmentDescriptions[selectedValue] || 'Professional heavy equipment';
+        preview.style.display = 'flex';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Initialize preview if there's old data
 document.addEventListener('DOMContentLoaded', function() {
     const recurringCheckbox = document.getElementById('is_recurring');
     const recurrenceSection = document.getElementById('recurrence-section');
@@ -251,6 +336,9 @@ document.addEventListener('DOMContentLoaded', function() {
     recurringCheckbox.addEventListener('change', function() {
         recurrenceSection.style.display = this.checked ? 'block' : 'none';
     });
+    
+    // Initialize equipment preview
+    updateEquipmentPreview();
 });
 </script>
 @endsection
