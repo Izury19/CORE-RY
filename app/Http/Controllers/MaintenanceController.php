@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceType;
@@ -33,8 +34,15 @@ class MaintenanceController extends Controller
 
     public function create()
     {
+        // ✅ Get only available equipment (status = 'available')
+        $availableEquipment = DB::table('equipment')
+            ->where('status', 'available') // ✅ CHANGED: only 'available' status
+            ->select('id', 'name', 'plate_number') // ✅ Added 'id'
+            ->get();
+        
         $maintenanceTypes = MaintenanceType::all();
-        return view('SchedulePreventive.create', compact('maintenanceTypes'));
+        
+        return view('SchedulePreventive.create', compact('availableEquipment', 'maintenanceTypes'));
     }
 
     public function store(Request $request)
@@ -50,6 +58,15 @@ class MaintenanceController extends Controller
             'recurrence_end_date' => 'nullable|date|after:scheduled_date',
         ]);
 
+        // ✅ Get equipment ID from name to ensure we have the correct record
+        $equipment = DB::table('equipment')
+            ->where('name', $request->equipment_name)
+            ->first();
+
+        if (!$equipment) {
+            return back()->withErrors(['equipment_name' => 'Selected equipment not found.']);
+        }
+
         // ✅ Generate equipment_id safely
         $equipmentId = strtoupper(str_replace(' ', '_', $request->equipment_name));
         if (empty($equipmentId)) {
@@ -58,7 +75,7 @@ class MaintenanceController extends Controller
 
         $data = [
             'equipment_name' => $request->equipment_name,
-            'equipment_id' => $equipmentId, // ✅ Guaranteed not null
+            'equipment_id' => $equipmentId,
             'maintenance_type_id' => $request->maintenance_type_id,
             'scheduled_date' => $request->scheduled_date,
             'priority' => $request->priority,
@@ -84,6 +101,11 @@ class MaintenanceController extends Controller
             'ai_predicted_failure_date' => $predictedDate,
             'ai_recommendations' => $recommendations
         ]);
+
+        // ✅ UPDATE EQUIPMENT STATUS TO "maintenance"
+        DB::table('equipment')
+            ->where('id', $equipment->id) // ✅ Use ID instead of name
+            ->update(['status' => 'maintenance']);
 
         // ✅ CREATE NOTIFICATION
         $this->createNotification($schedule, 'upcoming');
@@ -125,7 +147,7 @@ class MaintenanceController extends Controller
 
         $data = [
             'equipment_name' => $request->equipment_name,
-            'equipment_id' => $equipmentId, // ✅ Guaranteed not null
+            'equipment_id' => $equipmentId,
             'maintenance_type_id' => $request->maintenance_type_id,
             'scheduled_date' => $request->scheduled_date,
             'priority' => $request->priority,
@@ -162,6 +184,12 @@ class MaintenanceController extends Controller
     public function destroy($id)
     {
         $schedule = MaintenanceSchedule::findOrFail($id);
+        
+        // ✅ Set equipment status back to 'available' when deleting schedule
+        DB::table('equipment')
+            ->where('name', $schedule->equipment_name)
+            ->update(['status' => 'available']);
+            
         $schedule->delete();
 
         return redirect()->route('maintenance.index')
@@ -186,6 +214,11 @@ class MaintenanceController extends Controller
         $schedule->completed_at = now();
         $schedule->save();
 
+        // ✅ Set equipment status back to 'available' when completed
+        DB::table('equipment')
+            ->where('name', $schedule->equipment_name)
+            ->update(['status' => 'available']);
+
         // ✅ Create completion notification
         $this->createNotification($schedule, 'completed');
 
@@ -208,7 +241,7 @@ class MaintenanceController extends Controller
 
                 MaintenanceSchedule::create([
                     'equipment_name' => $schedule->equipment_name,
-                    'equipment_id' => $recurringEquipmentId, // ✅ Not null
+                    'equipment_id' => $recurringEquipmentId,
                     'maintenance_type_id' => $schedule->maintenance_type_id,
                     'scheduled_date' => $nextDate,
                     'priority' => $schedule->priority,
@@ -236,6 +269,11 @@ class MaintenanceController extends Controller
             'proof_image' => null,
         ]);
 
+        // ✅ Set equipment status to 'maintenance' when resetting to pending
+        DB::table('equipment')
+            ->where('name', $schedule->equipment_name)
+            ->update(['status' => 'maintenance']);
+
         return response()->json([
             'success' => true,
             'message' => 'Schedule reset to pending status.'
@@ -260,18 +298,20 @@ class MaintenanceController extends Controller
         
         switch($type) {
             case 'upcoming':
-    $scheduledDate = Carbon::parse($schedule->scheduled_date);
-    $today = now();
-    
-    if ($scheduledDate->isFuture()) {
-        $daysLeft = $today->diffInDays($scheduledDate);
-        $daysLeft = max(1, round($daysLeft)); // Ensure minimum 1 day
-        $message = "Maintenance scheduled for {$schedule->equipment_name} in {$daysLeft} day" . ($daysLeft != 1 ? 's' : '');
-    } else {
-        // If scheduled date is in the past, it's overdue (but type is 'upcoming' — should not happen)
-        $message = "Maintenance for {$schedule->equipment_name} is overdue";
-    }
-    break;
+                $scheduledDate = Carbon::parse($schedule->scheduled_date);
+                $today = now();
+                
+                if ($scheduledDate->isFuture()) {
+                    $daysLeft = $today->diffInDays($scheduledDate);
+                    $daysLeft = max(1, round($daysLeft));
+                    $message = "Maintenance scheduled for {$schedule->equipment_name} in {$daysLeft} day" . ($daysLeft != 1 ? 's' : '');
+                } else {
+                    $message = "Maintenance for {$schedule->equipment_name} is overdue";
+                }
+                break;
+            case 'completed':
+                $message = "Maintenance for {$schedule->equipment_name} has been completed";
+                break;
         }
         
         // ✅ Ensure equipment_id is not null
@@ -285,7 +325,7 @@ class MaintenanceController extends Controller
         
         MaintenanceNotification::create([
             'equipment_name' => $schedule->equipment_name,
-            'equipment_id' => $notificationEquipmentId, // ✅ Guaranteed not null
+            'equipment_id' => $notificationEquipmentId,
             'scheduled_date' => $schedule->scheduled_date,
             'notification_type' => $type,
             'message' => $message
@@ -379,6 +419,17 @@ class MaintenanceController extends Controller
                 ['name' => $typeData['name']],
                 $typeData
             );
+        }
+        
+        // Create sample equipment if none exists
+        $equipmentList = [
+            ['name' => 'Liebherr LTM 11200 Crane', 'plate_number' => 'ABC-123', 'status' => 'available'],
+            ['name' => 'Tadano TG-500E Mobile Crane', 'plate_number' => 'XYZ-789', 'status' => 'available'],
+            ['name' => 'Kobelco CK-500G Tower Crane', 'plate_number' => 'DEF-456', 'status' => 'available']
+        ];
+        
+        foreach ($equipmentList as $eqData) {
+            DB::table('equipment')->insertOrIgnore($eqData);
         }
         
         $maintenanceTypes = MaintenanceType::all();

@@ -21,7 +21,7 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <!-- High Risk -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="{{ route('maintenance.index', ['risk_filter' => 'high']) }}" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div class="flex items-start">
                 <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
@@ -36,10 +36,10 @@
                     <p class="text-xs text-red-600 mt-1">AI Risk Score ≥ 80%</p>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Medium Risk -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="{{ route('maintenance.index', ['risk_filter' => 'medium']) }}" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div class="flex items-start">
                 <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
@@ -54,10 +54,10 @@
                     <p class="text-xs text-yellow-600 mt-1">AI Risk Score 60-79%</p>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Low Risk -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="{{ route('maintenance.index', ['risk_filter' => 'low']) }}" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div class="flex items-start">
                 <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
@@ -72,10 +72,10 @@
                     <p class="text-xs text-green-600 mt-1">AI Risk Score < 60%</p>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Total Schedules -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="{{ route('maintenance.index') }}" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div class="flex items-start">
                 <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -90,7 +90,7 @@
                     <p class="text-xs text-gray-500 mt-1">All maintenance schedules</p>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Main Content -->
@@ -110,33 +110,65 @@
                 @if($upcomingMaintenance->count() > 0)
                     <div class="space-y-4">
                         @foreach($upcomingMaintenance as $schedule)
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div class="flex-1">
-                                    <div class="flex items-center">
-                                        <span class="font-medium text-gray-900">{{ $schedule->equipment_name }}</span>
-                                        <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                                            {{ $schedule->maintenanceType->name ?? 'N/A' }}
-                                        </span>
+                            @if(isset($schedule->id))
+                                <a href="{{ route('maintenance.edit', $schedule->id) }}" class="block">
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer">
+                                        <div class="flex-1">
+                                            <div class="flex items-center">
+                                                <span class="font-medium text-gray-900">{{ $schedule->equipment_name }}</span>
+                                                <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                                    {{ $schedule->maintenanceType->name ?? 'N/A' }}
+                                                </span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                {{ \Carbon\Carbon::parse($schedule->scheduled_date)->format('M d, Y') }}
+                                            </p>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                AI Risk: {{ number_format($schedule->ai_risk_score * 100, 0) }}%
+                                            </span>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                @php
+                                                $scheduledDate = \Carbon\Carbon::parse($schedule->scheduled_date);
+                                                $daysLeft = $scheduledDate->isFuture() 
+                                                    ? max(1, round($scheduledDate->diffInDays(now())))
+                                                    : 0;
+                                                @endphp
+                                                {{ $daysLeft }} {{ $daysLeft == 1 ? 'day' : 'days' }}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        {{ \Carbon\Carbon::parse($schedule->scheduled_date)->format('M d, Y') }}
-                                    </p>
+                                </a>
+                            @else
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex-1">
+                                        <div class="flex items-center">
+                                            <span class="font-medium text-gray-900">{{ $schedule->equipment_name }}</span>
+                                            <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                                {{ $schedule->maintenanceType->name ?? 'N/A' }}
+                                            </span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">
+                                            {{ \Carbon\Carbon::parse($schedule->scheduled_date)->format('M d, Y') }}
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            AI Risk: {{ number_format($schedule->ai_risk_score * 100, 0) }}%
+                                        </span>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            @php
+                                            $scheduledDate = \Carbon\Carbon::parse($schedule->scheduled_date);
+                                            $daysLeft = $scheduledDate->isFuture() 
+                                                ? max(1, round($scheduledDate->diffInDays(now())))
+                                                : 0;
+                                            @endphp
+                                            {{ $daysLeft }} {{ $daysLeft == 1 ? 'day' : 'days' }}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="text-right">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        AI Risk: {{ number_format($schedule->ai_risk_score * 100, 0) }}%
-                                    </span>
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        @php
-                                        $scheduledDate = \Carbon\Carbon::parse($schedule->scheduled_date);
-                                        $daysLeft = $scheduledDate->isFuture() 
-                                            ? max(1, round($scheduledDate->diffInDays(now())))
-                                            : 0;
-                                        @endphp
-                                        {{ $daysLeft }} {{ $daysLeft == 1 ? 'day' : 'days' }}
-                                    </p>
-                                </div>
-                            </div>
+                            @endif
                         @endforeach
                     </div>
                 @else
@@ -165,38 +197,75 @@
                 
                 <div class="space-y-4">
                     @foreach($recentNotifications as $notif)
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0 mt-1">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </span>
-                            </div>
-                            <div class="ml-3 flex-1">
-                                <div class="flex items-center">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                        @if($notif->notification_type === 'upcoming') bg-green-100 text-green-800
-                                        @elseif($notif->notification_type === 'overdue') bg-red-100 text-red-800
-                                        @else bg-blue-100 text-blue-800 @endif">
-                                        {{ ucfirst($notif->notification_type) }}
-                                    </span>
-                                    <span class="ml-2 text-xs text-gray-500">
-                                        {{ \Carbon\Carbon::parse($notif->created_at)->format('H:i') }}
+                        @if(isset($notif->id))
+                            <a href="{{ route('maintenance.index', ['notification_id' => $notif->id]) }}" class="block">
+                                <div class="flex items-start hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                                @if($notif->notification_type === 'upcoming') bg-green-100 text-green-800
+                                                @elseif($notif->notification_type === 'overdue') bg-red-100 text-red-800
+                                                @else bg-blue-100 text-blue-800 @endif">
+                                                {{ ucfirst($notif->notification_type) }}
+                                            </span>
+                                            <span class="ml-2 text-xs text-gray-500">
+                                                {{ \Carbon\Carbon::parse($notif->created_at)->format('H:i') }}
+                                            </span>
+                                        </div>
+                                        <p class="text-sm font-medium text-gray-900 mt-1">
+                                            @if($notif->notification_type === 'upcoming')
+                                                Maintenance for {{ $notif->equipment_name }}
+                                            @else
+                                                {{ $notif->message }}
+                                            @endif
+                                        </p>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {{ \Carbon\Carbon::parse($notif->scheduled_date)->format('M d') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
+                        @else
+                            <div class="flex items-start hover:bg-gray-50 p-2 rounded">
+                                <div class="flex-shrink-0 mt-1">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                     </span>
                                 </div>
-                                <p class="text-sm font-medium text-gray-900 mt-1">
-                                    @if($notif->notification_type === 'upcoming')
-                                        Maintenance for {{ $notif->equipment_name }}
-                                    @else
-                                        {{ $notif->message }}
-                                    @endif
-                                </p>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    {{ \Carbon\Carbon::parse($notif->scheduled_date)->format('M d') }}
-                                </p>
+                                <div class="ml-3 flex-1">
+                                    <div class="flex items-center">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                            @if($notif->notification_type === 'upcoming') bg-green-100 text-green-800
+                                            @elseif($notif->notification_type === 'overdue') bg-red-100 text-red-800
+                                            @else bg-blue-100 text-blue-800 @endif">
+                                            {{ ucfirst($notif->notification_type) }}
+                                        </span>
+                                        <span class="ml-2 text-xs text-gray-500">
+                                            {{ \Carbon\Carbon::parse($notif->created_at)->format('H:i') }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-900 mt-1">
+                                        @if($notif->notification_type === 'upcoming')
+                                            Maintenance for {{ $notif->equipment_name }}
+                                        @else
+                                            {{ $notif->message }}
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {{ \Carbon\Carbon::parse($notif->scheduled_date)->format('M d') }}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     @endforeach
                     
                     @if($recentNotifications->isEmpty())
@@ -217,17 +286,17 @@
     <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Monthly Performance</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="text-center p-4 bg-green-50 rounded-lg">
+            <a href="{{ route('maintenance.index', ['status' => 'completed']) }}" class="block text-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer">
                 <p class="text-2xl font-bold text-green-600">{{ $completedThisMonth }}</p>
                 <p class="text-sm text-gray-600 mt-1">Completed This Month</p>
                 <p class="text-xs text-green-600 mt-1">✓ On track</p>
-            </div>
-            <div class="text-center p-4 bg-blue-50 rounded-lg">
+            </a>
+            <a href="{{ route('maintenance.index') }}" class="block text-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer">
                 <p class="text-2xl font-bold text-blue-600">{{ $totalSchedules }}</p>
                 <p class="text-sm text-gray-600 mt-1">Total Schedules</p>
                 <p class="text-xs text-blue-600 mt-1">Active & completed</p>
-            </div>
-            <div class="text-center p-4 bg-purple-50 rounded-lg">
+            </a>
+            <a href="{{ route('maintenance.index', ['performance' => 'on-time']) }}" class="block text-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer">
                 <p class="text-2xl font-bold text-purple-600">
                     @if($totalSchedules > 0)
                         {{ round(($totalSchedules - $overdueCount) / $totalSchedules * 100) }}%
@@ -237,7 +306,7 @@
                 </p>
                 <p class="text-sm text-gray-600 mt-1">On-Time Completion</p>
                 <p class="text-xs text-purple-600 mt-1">Target: 95%</p>
-            </div>
+            </a>
         </div>
     </div>
 </div>

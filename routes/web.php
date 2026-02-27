@@ -19,7 +19,7 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\OTPController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\BillingInvoiceController;
-
+use App\Http\Controllers\EquipmentController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -92,6 +92,7 @@ Route::get('/assign-tech', [TechnicianController::class, 'index'])->name('assign
 Route::post('/technicians/{technician}/upload-image', [TechnicianController::class, 'uploadImage'])->name('technicians.uploadImage');
 Route::post('/maintenance/{id}/upload-proof', [MaintenanceController::class, 'markCompleted'])->name('maintenance.complete');
 Route::post('/send-email-notification', [MaintenanceController::class, 'sendEmailNotification']);
+Route::post('/equipment', [EquipmentController::class, 'store'])->name('equipment.store');
 
 
 /*

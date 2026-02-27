@@ -138,6 +138,15 @@
     color: #64748b;
     margin: 0;
 }
+
+/* Add Equipment Form */
+.add-equipment-section {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border-left: 3px solid #10b981;
+}
 </style>
 
 <div class="form-container">
@@ -162,6 +171,38 @@
             </div>
         @endif
 
+        <!-- ADD NEW EQUIPMENT SECTION -->
+        <div class="add-equipment-section">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Add New Equipment</h3>
+            <form action="{{ route('equipment.store') }}" method="POST" class="form-row">
+                @csrf
+                <div class="form-group">
+                    <label class="form-label">Equipment Name</label>
+                    <input type="text" 
+                           name="name" 
+                           required 
+                           class="form-control"
+                           placeholder="e.g., Liebherr LTM 11200 Crane">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Plate Number</label>
+                    <input type="text" 
+                           name="plate_number" 
+                           required 
+                           class="form-control"
+                           placeholder="e.g., ABC-123">
+                </div>
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button type="submit" 
+                            class="submit-button"
+                            style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        + Add Equipment
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- MAINTENANCE SCHEDULE FORM -->
         <form action="{{ route('maintenance.store') }}" method="POST">
             @csrf
             
@@ -169,12 +210,15 @@
                 <label class="form-label" for="equipment_name">Equipment Name *</label>
                 <div class="equipment-select">
                     <select id="equipment_name" name="equipment_name" class="form-control" required onchange="updateEquipmentPreview()">
-                        <option value="">Select Equipment</option>
-                        <option value="Liebherr LTM 11200 Crane" data-image="{{ asset('images/crane-liebherr.jpg') }}" {{ old('equipment_name') == 'Liebherr LTM 11200 Crane' ? 'selected' : '' }}>Liebherr LTM 11200 Crane</option>
-                        <option value="Tadano TG-500E Mobile Crane" data-image="{{ asset('images/crane-tadano.jpg') }}" {{ old('equipment_name') == 'Tadano TG-500E Mobile Crane' ? 'selected' : '' }}>Tadano TG-500E Mobile Crane</option>
-                        <option value="Kobelco CK-500G Tower Crane" data-image="{{ asset('images/crane-kobelco.jpg') }}" {{ old('equipment_name') == 'Kobelco CK-500G Tower Crane' ? 'selected' : '' }}>Kobelco CK-500G Tower Crane</option>
-                        <option value="Zoomlion ZTC250" data-image="{{ asset('images/crane-zoomlion.jpg') }}" {{ old('equipment_name') == 'Zoomlion ZTC250' ? 'selected' : '' }}>Zoomlion ZTC250</option>
-                        <option value="Manitowoc MLC300" data-image="{{ asset('images/crane-manitowoc.jpg') }}" {{ old('equipment_name') == 'Manitowoc MLC300' ? 'selected' : '' }}>Manitowoc MLC300</option>
+                        <option value="">Select Available Equipment</option>
+                        @foreach($availableEquipment as $equipment)
+                            <option value="{{ $equipment->name }}" 
+                                    data-image="{{ asset('images/' . strtolower(str_replace(' ', '-', $equipment->name)) . '.jpg') }}"
+                                    data-plate="{{ $equipment->plate_number }}"
+                                    {{ old('equipment_name') == $equipment->name ? 'selected' : '' }}>
+                                {{ $equipment->name }} ({{ $equipment->plate_number }})
+                            </option>
+                        @endforeach
                     </select>
                 </div>
                 
@@ -184,6 +228,7 @@
                     <div class="equipment-info">
                         <h4 id="equipmentTitle"></h4>
                         <p id="equipmentDescription"></p>
+                        <p id="equipmentPlate" style="font-size: 0.75rem; color: #64748b; margin: 0;"></p>
                     </div>
                 </div>
             </div>
@@ -309,15 +354,18 @@ function updateEquipmentPreview() {
     const image = document.getElementById('equipmentImage');
     const title = document.getElementById('equipmentTitle');
     const description = document.getElementById('equipmentDescription');
+    const plate = document.getElementById('equipmentPlate');
     
     const selectedOption = select.options[select.selectedIndex];
     const selectedValue = select.value;
     const imageUrl = selectedOption.getAttribute('data-image');
+    const plateNumber = selectedOption.getAttribute('data-plate');
     
     if (selectedValue && imageUrl) {
         image.src = imageUrl;
         title.textContent = selectedValue;
         description.textContent = equipmentDescriptions[selectedValue] || 'Professional heavy equipment';
+        plate.textContent = plateNumber ? 'Plate: ' + plateNumber : '';
         preview.style.display = 'flex';
     } else {
         preview.style.display = 'none';
