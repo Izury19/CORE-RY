@@ -134,7 +134,10 @@ Route::get('/financial-report', [ReportingController::class, 'index'])->name('fi
 Route::get('/financial-report/export/excel', [ReportingController::class, 'exportExcel'])->name('financial-report.export.excel');
 Route::get('/financial-report/export/pdf', [ReportingController::class, 'exportPdf'])->name('financial-report.export.pdf');
 
-
+Route::post('/forward-document', [ReportingController::class, 'forwardDocument'])->name('forward.document');
+Route::get('/forward-files', function () {
+    return view('forward-form');
+})->name('forward.files');
 /*
 |--------------------------------------------------------------------------
 | Delivery & Receipts
@@ -243,19 +246,3 @@ Route::get('/test-invoice-record', function () {
 });
 
 
-Route::post('/forward-document', [ReportingController::class, 'forwardDocument'])->name('forward.document');
-Route::get('/forward-files', function () {
-    return view('forward-form');
-})->name('forward.files');
-
-// Add this line in your web.php
-Route::post('/verify-password', [ReportingController::class, 'verifyPassword'])->name('verify.password');
-
-// Financial Report
-Route::get('/financial-report', [ReportingController::class, 'index'])->name('financial-report');
-
-// Contract Management  
-Route::get('/contract-management', [ContractController::class, 'index'])->name('contract.management');
-
-// Maintenance Dashboard
-Route::get('/maintenance-dashboard', [MaintenanceController::class, 'dashboard'])->name('maintenance-dashboard');

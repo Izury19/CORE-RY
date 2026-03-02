@@ -154,7 +154,8 @@
             btn.disabled = true;
             
             // Send to your controller (which forwards to admin API)
-            fetch('/CORE333/public/forward-document', {
+            // use route() so the path respects the app base URL
+            fetch('{{ route('forward.document') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

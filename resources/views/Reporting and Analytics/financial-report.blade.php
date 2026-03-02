@@ -176,10 +176,32 @@
 .ah-btn-cancel { height:42px; padding:0 18px; background:#f1f5f9; color:#64748b; border:none; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; }
 .ah-btn-cancel:hover { background:#e2e8f0; }
 
-/* Forward modal */
-.ah-fwd-bg { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; display:none; align-items:center; justify-content:center; padding:16px; }
+/* Forward modal — NEW self-contained, no iframe */
+.ah-fwd-bg { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(3px); z-index:1000; display:none; align-items:center; justify-content:center; padding:16px; }
 .ah-fwd-bg.open { display:flex; }
-.ah-fwd-box { background:#fff; border-radius:14px; width:95%; max-width:820px; height:90vh; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.2); }
+.ah-fwd-box { background:#fff; border-radius:16px; width:100%; max-width:480px; box-shadow:0 30px 80px rgba(0,0,0,.22); animation:ahIn .22s ease; overflow:hidden; }
+.ah-fwd-hd { background:linear-gradient(135deg,#4f46e5,#7c3aed); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; }
+.ah-fwd-hd h3 { font-family:'Outfit',sans-serif; font-size:17px; font-weight:700; color:#fff; margin:0; }
+.ah-fwd-hd p  { font-size:12px; color:rgba(255,255,255,.7); margin:3px 0 0; }
+.ah-fwd-hd-x  { background:none; border:none; color:rgba(255,255,255,.8); cursor:pointer; padding:4px; border-radius:6px; flex-shrink:0; }
+.ah-fwd-hd-x:hover { background:rgba(255,255,255,.15); color:#fff; }
+.ah-fwd-bd { padding:24px; }
+.ah-fwd-dest { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:11px 15px; margin-bottom:20px; display:flex; align-items:flex-start; gap:9px; }
+.ah-fwd-dest-text { font-size:13px; font-weight:500; color:#065f46; line-height:1.4; }
+.ah-fwd-dest-text strong { color:#064e3b; }
+.ah-fwd-dest-sub { font-size:11.5px; color:#15803d; margin-top:3px; }
+.ah-fwd-label { display:block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#64748b; margin-bottom:6px; }
+.ah-fwd-select { width:100%; height:42px; padding:0 36px 0 13px; border:1.5px solid #e2e8f0; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13.5px; color:#1e293b; background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 13px center; appearance:none; outline:none; transition:border-color .18s,box-shadow .18s; margin-bottom:16px; }
+.ah-fwd-select:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); background-color:#fff; }
+.ah-fwd-status { display:none; border-radius:10px; padding:12px 15px; margin-bottom:16px; font-size:13px; font-weight:600; align-items:center; gap:8px; }
+.ah-fwd-status.show { display:flex; }
+.fwd-ok  { background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; }
+.fwd-err { background:#fff1f2; border:1px solid #fecaca; color:#dc2626; }
+.ah-fwd-submit { width:100%; height:44px; background:#4f46e5; color:#fff; border:none; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .18s; }
+.ah-fwd-submit:hover:not(:disabled) { background:#4338ca; }
+.ah-fwd-submit:disabled { opacity:.7; cursor:not-allowed; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spin { animation:spin .8s linear infinite; display:inline-block; }
 
 /* Anim */
 @keyframes ahFU { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
@@ -494,7 +516,7 @@
     </div>
 </div>
 
-{{-- Password Modal --}}
+{{-- ═══ PASSWORD MODAL ═══ --}}
 <div class="ah-modal-bg" id="ahPwdModal">
     <div class="ah-modal-box">
         <div class="ah-modal-hd">
@@ -518,16 +540,64 @@
     </div>
 </div>
 
-{{-- Forward Modal --}}
+
 <div class="ah-fwd-bg" id="forwardModal">
     <div class="ah-fwd-box">
-        <iframe src="{{ url('forward-files') }}" frameborder="0" style="width:100%;height:100%;border:none;"></iframe>
+        <div class="ah-fwd-hd">
+            <div>
+                <h3 id="fwdTitle">Forward Report</h3>
+                <p>Send to Document Manager · admin.cranecali-ms.com</p>
+            </div>
+            <button class="ah-fwd-hd-x" onclick="closeForwardModal()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="ah-fwd-bd">
+
+            {{-- Destination badge --}}
+            <div class="ah-fwd-dest">
+                <svg width="16" height="16" fill="none" stroke="#15803d" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                <div>
+                    <div class="ah-fwd-dest-text">Forwarding to: <strong>admin.cranecali-ms.com</strong></div>
+                    <div class="ah-fwd-dest-sub">Password protected · document (open) · admin </div>
+                </div>
+            </div>
+
+            {{-- Document Type --}}
+            <label class="ah-fwd-label">Document Type</label>
+            <select id="fwdDocType" class="ah-fwd-select">
+                <option value="Financial Intelligence Report">Financial Intelligence Report</option>
+                <option value="Maintenance Compliance Report">Maintenance Compliance Report</option>
+                <option value="Project Status Update">Project Status Update</option>
+                <option value="Regulatory Compliance Report">Regulatory Compliance Report</option>
+            </select>
+
+            {{-- Category --}}
+            <label class="ah-fwd-label">Category</label>
+            <select id="fwdCategory" class="ah-fwd-select">
+                <option value="Financial">Financial</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Projects">Projects</option>
+                <option value="Compliance">Compliance</option>
+            </select>
+
+            {{-- Status message --}}
+            <div class="ah-fwd-status" id="fwdStatus"></div>
+
+            
+            <button class="ah-fwd-submit" id="fwdSubmitBtn" onclick="submitForward()">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                Send to Document Manager
+            </button>
+
+        </div>
     </div>
 </div>
 
 <script>
 const AH_PWD = 'admin123';
 
+/* ── Password modal ── */
 function openPwdModal(e){ e.preventDefault(); e.stopPropagation(); showPwdModal(); }
 function showPwdModal(){
     document.getElementById('ahPwdModal').classList.add('open');
@@ -551,12 +621,95 @@ function verifyPwd(){
     }
 }
 
+/* ── Forward modal ── */
 function openForwardModal(type, cat){
-    localStorage.setItem('forwardDocumentType', type);
-    localStorage.setItem('forwardCategory', cat);
+    // Set dropdowns
+    const docSel = document.getElementById('fwdDocType');
+    const catSel = document.getElementById('fwdCategory');
+    [...docSel.options].forEach((o,i)=>{ if(o.value===type) docSel.selectedIndex=i; });
+    [...catSel.options].forEach((o,i)=>{ if(o.value===cat)  catSel.selectedIndex=i; });
+
+    // Set title
+    document.getElementById('fwdTitle').textContent = 'Forward ' + type;
+
+    // Reset status & button
+    resetFwdBtn();
+    const st = document.getElementById('fwdStatus');
+    st.className = 'ah-fwd-status';
+    st.innerHTML = '';
+
     document.getElementById('forwardModal').classList.add('open');
 }
+
 function closeForwardModal(){ document.getElementById('forwardModal').classList.remove('open'); }
+
+function resetFwdBtn(){
+    const btn = document.getElementById('fwdSubmitBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send to Document Manager';
+    btn.style.background = '#4f46e5';
+}
+
+function submitForward(){
+    const docType  = document.getElementById('fwdDocType').value;
+    const category = document.getElementById('fwdCategory').value;
+    const btn      = document.getElementById('fwdSubmitBtn');
+    const st       = document.getElementById('fwdStatus');
+
+    // Loading
+    btn.disabled = true;
+    btn.style.background = '#6366f1';
+    btn.innerHTML = '<svg class="spin" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Forwarding…';
+
+    st.className = 'ah-fwd-status';
+    st.innerHTML = '';
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
+    // build the URL using Laravel helpers so the correct base path is used
+    const forwardUrl = '{{ route('forward.document') }}';
+
+    fetch(forwardUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ document_type: docType, category: category })
+    })
+    // try to parse JSON but guard against HTML/error pages
+    .then(res => {
+        if (!res.ok) {
+            // if server returned non-2xx status then grab text for debugging
+            return res.text().then(txt => { throw new Error('HTTP '+res.status+': '+txt); });
+        }
+        return res.text();
+    })
+    .then(text => {
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch(e) {
+            // unexpected HTML/markup
+            throw new Error('Invalid JSON response from server:\n'+text);
+        }
+        if(data.success){
+            st.className = 'ah-fwd-status show fwd-ok';
+            st.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' + (data.message || '✅ Successfully forwarded!');
+            btn.style.background = '#10b981';
+            btn.innerHTML = '✓ Sent Successfully';
+        } else {
+            throw new Error(data.message || 'Server returned an error.');
+        }
+    })
+    .catch(err => {
+        st.className = 'ah-fwd-status show fwd-err';
+        st.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ' + err.message;
+        resetFwdBtn();
+    });
+}
+
+/* ── Global ESC / backdrop close ── */
 document.getElementById('forwardModal').addEventListener('click', e=>{ if(e.target===document.getElementById('forwardModal')) closeForwardModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closePwdModal(); closeForwardModal(); } });
 </script>
