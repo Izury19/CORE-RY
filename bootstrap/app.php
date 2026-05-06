@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ✅ REGISTER YOUR MIDDLEWARE ALIAS HERE
         $middleware->alias([
             'api.key' => ValidateApiKey::class,
+            'prevent-back' => App\Http\Middleware\PreventBack::class, 
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

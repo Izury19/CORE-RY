@@ -738,7 +738,7 @@ class ReportingController extends Controller
         if ($response->successful()) {
             return response()->json([
                 'success' => true,
-                'message' => '✅ File successfully sent to Document Manager!',
+                'message' => 'File successfully sent to Document Manager!',
                 'filename' => $filename
             ]);
         }
